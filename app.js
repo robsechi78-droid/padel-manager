@@ -2136,7 +2136,10 @@ async function loadTournaments() {
             <th style="text-align:left;padding:12px;">
               Stato
             </th>
-
+            
+<th style="text-align:left;padding:12px;">
+  Azioni
+</th>
           </tr>
 
         </thead>
@@ -2185,6 +2188,15 @@ async function loadTournaments() {
 }
         </td>
 
+<td style="padding:12px;border-top:1px solid #e2e8ea;">
+  <button
+    class="primary tournament-manage"
+    data-id="${tournament.id}"
+  >
+    Gestisci
+  </button>
+</td>
+
       </tr>
     `;
   });
@@ -2199,4 +2211,290 @@ async function loadTournaments() {
   `;
 
   container.innerHTML = html;
+}
+
+   document.addEventListener("click", function(event) {
+
+  const button =
+    event.target.closest(".tournament-manage");
+
+  if (!button) {
+    return;
+  }
+
+  const tournamentId =
+    button.getAttribute("data-id");
+
+  openTournamentManager(tournamentId);
+
+});
+
+
+async function openTournamentManager(tournamentId) {
+
+  const container =
+    document.getElementById("tournaments-content");
+
+  container.innerHTML =
+    "Caricamento torneo...";
+
+  const { data: tournament, error } =
+    await supabaseClient
+      .from("tournaments")
+      .select("*")
+      .eq("id", tournamentId)
+      .single();
+
+  if (error) {
+
+    console.error(error);
+
+    container.innerHTML =
+      "Errore nel caricamento del torneo.";
+
+    return;
+  }
+
+  container.innerHTML = `
+
+    <div class="panel">
+
+      <div class="panel-head">
+
+        <div>
+
+          <h2>
+            ${escapeHtml(tournament.name)}
+          </h2>
+
+          <p>
+            ${escapeHtml(tournament.category || "")}
+          </p>
+
+        </div>
+
+        <button
+          class="primary"
+          id="back-to-tournaments"
+        >
+          ← Tornei
+        </button>
+
+      </div>
+
+      <div class="cards">
+
+        <div class="card">
+          <span>Formazioni</span>
+          <strong>0 / 6</strong>
+        </div>
+
+        <div class="card">
+          <span>Giornate</span>
+          <strong>5</strong>
+        </div>
+
+        <div class="card">
+          <span>Partite</span>
+          <strong>0</strong>
+        </div>
+
+      </div>
+
+      <div class="panel">
+
+        <div class="panel-head">
+
+          <h3>Formazioni</h3>
+
+          <button
+            class="primary"
+            id="add-team"
+          >
+            + Nuova formazione
+          </button>
+
+        </div>
+
+        <div id="teams-content" class="empty">
+          Nessuna formazione inserita.
+        </div>
+
+      </div>
+
+    </div>
+  `;
+
+  document
+    .getElementById("back-to-tournaments")
+    .addEventListener(
+      "click",
+      loadTournaments
+    );
+
+  document
+    .getElementById("add-team")
+    .addEventListener(
+      "click",
+      function() {
+
+        openTeamForm(tournamentId);
+
+      }
+    );
+
+}
+function openTeamForm(tournamentId) {
+
+  const container =
+    document.getElementById("tournaments-content");
+
+  container.innerHTML = `
+
+    <div class="panel">
+
+      <h3>Nuova formazione</h3>
+
+      <div class="form-grid">
+
+        <input
+          id="team-name"
+          type="text"
+          placeholder="Nome formazione"
+        >
+
+        <input
+          id="team-player1"
+          type="text"
+          placeholder="Giocatore 1"
+        >
+
+        <input
+          id="team-player2"
+          type="text"
+          placeholder="Giocatore 2"
+        >
+
+      </div>
+
+      <div style="margin-top:20px">
+
+        <button
+          class="primary"
+          id="save-team"
+        >
+          Salva formazione
+        </button>
+
+        <button
+          id="cancel-team"
+          style="
+            margin-left:8px;
+            padding:11px 16px;
+            border:0;
+            border-radius:9px;
+            cursor:pointer;
+          "
+        >
+          Annulla
+        </button>
+
+      </div>
+
+      <p id="team-message"></p>
+
+    </div>
+  `;
+
+  document
+    .getElementById("save-team")
+    .addEventListener(
+      "click",
+      function() {
+
+        saveTeam(tournamentId);
+
+      }
+    );
+
+  document
+    .getElementById("cancel-team")
+    .addEventListener(
+      "click",
+      function() {
+
+        openTournamentManager(tournamentId);
+
+      }
+    );
+
+}
+
+
+async function saveTeam(tournamentId) {
+
+  const name =
+    document
+      .getElementById("team-name")
+      .value
+      .trim();
+
+  const player1 =
+    document
+      .getElementById("team-player1")
+      .value
+      .trim();
+
+  const player2 =
+    document
+      .getElementById("team-player2")
+      .value
+      .trim();
+
+  const message =
+    document
+      .getElementById("team-message");
+
+  if (!name || !player1 || !player2) {
+
+    message.textContent =
+      "Inserisci nome formazione e i due giocatori.";
+
+    return;
+  }
+
+  message.textContent =
+    "Salvataggio in corso...";
+
+  const { error } =
+    await supabaseClient
+      .from("tournament_teams")
+      .insert({
+
+        tournament_id:
+          tournamentId,
+
+        name:
+          name,
+
+        player1_name:
+          player1,
+
+        player2_name:
+          player2
+
+      });
+
+  if (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "Errore durante il salvataggio.";
+
+    return;
+  }
+
+  openTournamentManager(tournamentId);
+
 }
