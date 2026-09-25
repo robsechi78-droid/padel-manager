@@ -216,6 +216,9 @@ function setupNavigation() {
 if (sectionId === "courts") {
   loadCourts();
 }
+      if (sectionId === "bookings") {
+  loadBookings();
+}
     });
   });
 }
@@ -232,6 +235,9 @@ if (button.textContent.includes("Nuovo campo")) {
   button.addEventListener("click", openCourtForm);
 }
 
+    if (button.textContent.includes("Nuova prenotazione")) {
+  button.addEventListener("click", openBookingForm);
+}
   });
 }
 
@@ -1067,6 +1073,403 @@ async function loadCourts() {
 
         <td style="padding:12px;border-top:1px solid #e2e8ea;">
           ${court.active ? "Attivo" : "Non attivo"}
+        </td>
+
+      </tr>
+    `;
+  });
+
+  html += `
+
+        </tbody>
+
+      </table>
+
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+/* PRENOTAZIONI */
+
+async function openBookingForm() {
+
+  const container =
+    document.getElementById("bookings-content");
+
+  container.innerHTML =
+    "Caricamento dati...";
+
+  const { data: players, error: playersError } =
+    await supabaseClient
+      .from("players")
+      .select("id, first_name, last_name")
+      .eq("active", true)
+      .order("last_name");
+
+  const { data: courts, error: courtsError } =
+    await supabaseClient
+      .from("courts")
+      .select("id, name")
+      .eq("active", true)
+      .order("name");
+
+  if (playersError || courtsError) {
+
+    console.error(playersError || courtsError);
+
+    container.innerHTML =
+      "Errore nel caricamento dei dati.";
+
+    return;
+  }
+
+  let playerOptions = `
+    <option value="">Seleziona giocatore</option>
+  `;
+
+  players.forEach(player => {
+
+    playerOptions += `
+      <option value="${player.id}">
+        ${escapeHtml(player.last_name)}
+        ${escapeHtml(player.first_name)}
+      </option>
+    `;
+  });
+
+  let courtOptions = `
+    <option value="">Seleziona campo</option>
+  `;
+
+  courts.forEach(court => {
+
+    courtOptions += `
+      <option value="${court.id}">
+        ${escapeHtml(court.name)}
+      </option>
+    `;
+  });
+
+  container.innerHTML = `
+
+    <div class="player-form">
+
+      <h3>Nuova prenotazione</h3>
+
+      <div class="form-grid">
+
+        <input
+          id="booking-date"
+          type="date"
+        >
+
+        <input
+          id="booking-start"
+          type="time"
+        >
+
+        <input
+          id="booking-end"
+          type="time"
+        >
+
+        <select id="booking-court">
+          ${courtOptions}
+        </select>
+
+        <select id="booking-player">
+          ${playerOptions}
+        </select>
+
+        <input
+          id="booking-amount"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="Importo €"
+        >
+
+        <select id="booking-paid">
+
+          <option value="false">
+            Non pagato
+          </option>
+
+          <option value="true">
+            Pagato
+          </option>
+
+        </select>
+
+        <textarea
+          id="booking-notes"
+          placeholder="Note"
+        ></textarea>
+
+      </div>
+
+      <div style="margin-top:20px">
+
+        <button
+          class="primary"
+          id="save-booking"
+        >
+          Salva prenotazione
+        </button>
+
+        <button
+          id="cancel-booking"
+          style="
+            margin-left:8px;
+            padding:11px 16px;
+            border:0;
+            border-radius:9px;
+            cursor:pointer;
+          "
+        >
+          Annulla
+        </button>
+
+      </div>
+
+      <p id="booking-message"></p>
+
+    </div>
+  `;
+
+  document
+    .getElementById("save-booking")
+    .addEventListener("click", saveBooking);
+
+  document
+    .getElementById("cancel-booking")
+    .addEventListener("click", loadBookings);
+}
+
+
+async function saveBooking() {
+
+  const date =
+    document.getElementById("booking-date").value;
+
+  const start =
+    document.getElementById("booking-start").value;
+
+  const end =
+    document.getElementById("booking-end").value;
+
+  const courtId =
+    document.getElementById("booking-court").value;
+
+  const playerId =
+    document.getElementById("booking-player").value;
+
+  const amount =
+    document.getElementById("booking-amount").value;
+
+  const paid =
+    document.getElementById("booking-paid").value === "true";
+
+  const notes =
+    document.getElementById("booking-notes").value.trim();
+
+  const message =
+    document.getElementById("booking-message");
+
+  if (!date || !start || !end || !courtId) {
+
+    message.textContent =
+      "Inserisci data, orari e campo.";
+
+    return;
+  }
+
+  if (end <= start) {
+
+    message.textContent =
+      "L'orario di fine deve essere successivo all'orario di inizio.";
+
+    return;
+  }
+
+  message.textContent =
+    "Salvataggio in corso...";
+
+  const { error } =
+    await supabaseClient
+      .from("bookings")
+      .insert({
+
+        court_id: courtId,
+
+        player_id:
+          playerId || null,
+
+        booking_date:
+          date,
+
+        start_time:
+          start,
+
+        end_time:
+          end,
+
+        status:
+          "confirmed",
+
+        amount:
+          Number(amount) || 0,
+
+        paid:
+          paid,
+
+        notes:
+          notes || null
+
+      });
+
+  if (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "Errore durante il salvataggio.";
+
+    return;
+  }
+
+  message.textContent =
+    "Prenotazione salvata!";
+
+  await loadDashboard();
+
+  setTimeout(() => {
+    loadBookings();
+  }, 700);
+}
+
+
+async function loadBookings() {
+
+  const container =
+    document.getElementById("bookings-content");
+
+  container.innerHTML =
+    "Caricamento prenotazioni...";
+
+  const { data, error } =
+    await supabaseClient
+      .from("bookings")
+      .select(`
+        *,
+        courts(name),
+        players(first_name, last_name)
+      `)
+      .order("booking_date", {
+        ascending: true
+      })
+      .order("start_time", {
+        ascending: true
+      });
+
+  if (error) {
+
+    console.error(error);
+
+    container.innerHTML =
+      "Errore nel caricamento delle prenotazioni.";
+
+    return;
+  }
+
+  if (!data || data.length === 0) {
+
+    container.innerHTML =
+      "Nessuna prenotazione presente.";
+
+    return;
+  }
+
+  let html = `
+
+    <div style="overflow-x:auto;">
+
+      <table style="
+        width:100%;
+        border-collapse:collapse;
+      ">
+
+        <thead>
+
+          <tr>
+
+            <th style="text-align:left;padding:12px;">
+              Data
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Orario
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Campo
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Giocatore
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Importo
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Pagamento
+            </th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+  `;
+
+  data.forEach(booking => {
+
+    const player =
+      booking.players
+        ? `${booking.players.last_name} ${booking.players.first_name}`
+        : "-";
+
+    html += `
+
+      <tr>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(booking.booking_date)}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(booking.start_time)}
+          -
+          ${escapeHtml(booking.end_time)}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(booking.courts?.name || "-")}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(player)}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          € ${Number(booking.amount || 0).toFixed(2)}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${booking.paid ? "Pagato" : "Non pagato"}
         </td>
 
       </tr>
