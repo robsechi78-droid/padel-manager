@@ -1877,6 +1877,12 @@ async function openTournamentForm() {
           type="text"
           placeholder="Categoria"
         >
+        
+        <input
+  id="tournament-website"
+  type="url"
+  placeholder="Link pagina web del torneo"
+>
 
         <input
           id="tournament-start"
@@ -1970,6 +1976,12 @@ async function saveTournament() {
       .value
       .trim();
 
+  const website =
+  document
+    .getElementById("tournament-website")
+    .value
+    .trim();
+  
   const startDate =
     document
       .getElementById("tournament-start")
@@ -2015,6 +2027,9 @@ async function saveTournament() {
 
         category:
           category || null,
+
+        website_url:
+  website || null,
 
         start_date:
           startDate || null,
@@ -2106,6 +2121,10 @@ async function loadTournaments() {
               Categoria
             </th>
 
+<th style="text-align:left;padding:12px;">
+  Pagina web
+</th>
+
             <th style="text-align:left;padding:12px;">
               Inizio
             </th>
@@ -2139,6 +2158,13 @@ async function loadTournaments() {
           ${escapeHtml(tournament.category || "-")}
         </td>
 
+<td style="padding:12px;border-top:1px solid #e2e8ea;">
+  ${
+    tournament.website_url
+      ? `<a href="${escapeHtml(tournament.website_url)}" target="_blank">Apri pagina</a>`
+      : "-"
+  }
+</td>
         <td style="padding:12px;border-top:1px solid #e2e8ea;">
           ${escapeHtml(tournament.start_date || "-")}
         </td>
