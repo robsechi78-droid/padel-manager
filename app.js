@@ -4,13 +4,11 @@ const SUPABASE_KEY = "sb_publishable_xMBIXZPhX7mkSIMfQT3HBA_sPnhjFb9";
 let supabaseClient = null;
 
 async function init() {
-
   const script = document.createElement("script");
 
   script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
 
   script.onload = async () => {
-
     supabaseClient = window.supabase.createClient(
       SUPABASE_URL,
       SUPABASE_KEY
@@ -22,48 +20,38 @@ async function init() {
     const { data } = await supabaseClient.auth.getSession();
 
     if (data.session) {
-
       showApp();
 
       document.getElementById("status").textContent =
         "Accesso effettuato. Connessione a Supabase riuscita.";
 
       await loadDashboard();
-
     } else {
-
       showLogin();
-
     }
-
   };
 
   script.onerror = () => {
-
     document.getElementById("status").textContent =
       "Errore nel caricamento di Supabase.";
-
   };
 
   document.head.appendChild(script);
-
 }
 
 
-function showLogin() {
+/* LOGIN */
 
+function showLogin() {
   document.querySelector(".app").style.display = "none";
 
   let login = document.getElementById("login-screen");
 
   if (!login) {
-
     login = document.createElement("div");
-
     login.id = "login-screen";
 
     login.innerHTML = `
-
       <div style="
         min-height:100vh;
         display:flex;
@@ -72,7 +60,6 @@ function showLogin() {
         background:#f4f7f8;
         padding:20px;
       ">
-
         <div style="
           width:100%;
           max-width:400px;
@@ -82,7 +69,6 @@ function showLogin() {
           border:1px solid #e2e8ea;
           box-shadow:0 10px 30px rgba(0,0,0,0.08);
         ">
-
           <h1 style="margin-top:0;">
             🎾 Padel Manager
           </h1>
@@ -128,15 +114,9 @@ function showLogin() {
             Accedi
           </button>
 
-          <p
-            id="login-message"
-            style="margin-top:15px;"
-          ></p>
-
+          <p id="login-message" style="margin-top:15px;"></p>
         </div>
-
       </div>
-
     `;
 
     document.body.appendChild(login);
@@ -144,7 +124,6 @@ function showLogin() {
     document
       .getElementById("login-button")
       .addEventListener("click", loginUser);
-
   }
 
   login.style.display = "block";
@@ -152,7 +131,6 @@ function showLogin() {
 
 
 function showApp() {
-
   document.querySelector(".app").style.display = "flex";
 
   const login = document.getElementById("login-screen");
@@ -160,12 +138,10 @@ function showApp() {
   if (login) {
     login.style.display = "none";
   }
-
 }
 
 
 async function loginUser() {
-
   const email =
     document.getElementById("login-email").value.trim();
 
@@ -176,12 +152,9 @@ async function loginUser() {
     document.getElementById("login-message");
 
   if (!email || !password) {
-
     message.textContent =
       "Inserisci email e password.";
-
     return;
-
   }
 
   message.textContent =
@@ -194,14 +167,12 @@ async function loginUser() {
     });
 
   if (error) {
-
     console.error(error);
 
     message.textContent =
       "Email o password non corrette.";
 
     return;
-
   }
 
   showApp();
@@ -210,14 +181,13 @@ async function loginUser() {
     "Accesso effettuato. Connessione a Supabase riuscita.";
 
   await loadDashboard();
-
 }
 
 
+/* NAVIGAZIONE */
+
 function setupNavigation() {
-
   document.querySelectorAll(".nav").forEach(button => {
-
     button.addEventListener("click", () => {
 
       const sectionId = button.dataset.section;
@@ -242,28 +212,23 @@ function setupNavigation() {
       if (sectionId === "players") {
         loadPlayers();
       }
-
     });
-
   });
-
 }
 
 
 function setupButtons() {
-
   document.querySelectorAll(".primary").forEach(button => {
 
     if (button.textContent.includes("Nuovo giocatore")) {
-
       button.addEventListener("click", openPlayerForm);
-
     }
 
   });
-
 }
 
+
+/* DASHBOARD */
 
 async function countRows(tableName) {
 
@@ -276,15 +241,11 @@ async function countRows(tableName) {
       });
 
   if (error) {
-
     console.error(`Errore ${tableName}:`, error);
-
     return 0;
-
   }
 
   return count || 0;
-
 }
 
 
@@ -313,9 +274,10 @@ async function loadDashboard() {
 
   document.getElementById("tournaments-count").textContent =
     tournaments;
-
 }
 
+
+/* NUOVO GIOCATORE */
 
 function openPlayerForm() {
 
@@ -398,7 +360,6 @@ function openPlayerForm() {
       <p id="player-message"></p>
 
     </div>
-
   `;
 
   document
@@ -408,7 +369,6 @@ function openPlayerForm() {
   document
     .getElementById("cancel-player")
     .addEventListener("click", loadPlayers);
-
 }
 
 
@@ -435,47 +395,35 @@ async function savePlayer() {
   const message =
     document.getElementById("player-message");
 
-
   if (!firstName || !lastName) {
-
     message.textContent =
       "Inserisci almeno nome e cognome.";
-
     return;
-
   }
-
 
   message.textContent =
     "Salvataggio in corso...";
-
 
   const { error } =
     await supabaseClient
       .from("players")
       .insert({
-
         first_name: firstName,
         last_name: lastName,
         phone: phone || null,
         email: email || null,
         level: level || null,
         notes: notes || null
-
       });
 
-
   if (error) {
-
     console.error(error);
 
     message.textContent =
       "Errore durante il salvataggio.";
 
     return;
-
   }
-
 
   message.textContent =
     "Giocatore salvato!";
@@ -483,13 +431,12 @@ async function savePlayer() {
   await loadDashboard();
 
   setTimeout(() => {
-
     loadPlayers();
-
   }, 700);
-
 }
 
+
+/* ELENCO GIOCATORI */
 
 async function loadPlayers() {
 
@@ -499,7 +446,6 @@ async function loadPlayers() {
   container.innerHTML =
     "Caricamento giocatori...";
 
-
   const { data, error } =
     await supabaseClient
       .from("players")
@@ -508,18 +454,14 @@ async function loadPlayers() {
         ascending: true
       });
 
-
   if (error) {
-
     console.error(error);
 
     container.innerHTML =
       "Errore nel caricamento dei giocatori.";
 
     return;
-
   }
-
 
   if (!data || data.length === 0) {
 
@@ -527,31 +469,47 @@ async function loadPlayers() {
       "Nessun giocatore presente.";
 
     return;
-
   }
-
 
   let html = `
 
-    <table>
+    <div style="overflow-x:auto;">
 
-      <thead>
+      <table style="
+        width:100%;
+        border-collapse:collapse;
+      ">
 
-        <tr>
+        <thead>
 
-          <th>Nome</th>
-          <th>Telefono</th>
-          <th>Email</th>
-          <th>Livello</th>
+          <tr>
 
-        </tr>
+            <th style="text-align:left;padding:12px;">
+              Nome
+            </th>
 
-      </thead>
+            <th style="text-align:left;padding:12px;">
+              Telefono
+            </th>
 
-      <tbody>
+            <th style="text-align:left;padding:12px;">
+              Email
+            </th>
 
+            <th style="text-align:left;padding:12px;">
+              Livello
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Azioni
+            </th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
   `;
-
 
   data.forEach(player => {
 
@@ -559,42 +517,322 @@ async function loadPlayers() {
 
       <tr>
 
-        <td>
-          ${player.first_name} ${player.last_name}
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(player.first_name)}
+          ${escapeHtml(player.last_name)}
         </td>
 
-        <td>
-          ${player.phone || "-"}
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(player.phone || "-")}
         </td>
 
-        <td>
-          ${player.email || "-"}
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(player.email || "-")}
         </td>
 
-        <td>
-          ${player.level || "-"}
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(player.level || "-")}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+
+          <button
+            onclick="editPlayer('${player.id}')"
+            style="
+              padding:7px 10px;
+              border:0;
+              border-radius:7px;
+              cursor:pointer;
+              margin-right:5px;
+            "
+          >
+            Modifica
+          </button>
+
+          <button
+            onclick="deletePlayer('${player.id}')"
+            style="
+              padding:7px 10px;
+              border:0;
+              border-radius:7px;
+              cursor:pointer;
+            "
+          >
+            Elimina
+          </button>
+
         </td>
 
       </tr>
-
     `;
-
   });
-
 
   html += `
 
-      </tbody>
+        </tbody>
 
-    </table>
+      </table>
 
+    </div>
   `;
 
-
   container.innerHTML = html;
-
 }
 
+
+/* MODIFICA GIOCATORE */
+
+async function editPlayer(id) {
+
+  const { data, error } =
+    await supabaseClient
+      .from("players")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+  if (error) {
+
+    console.error(error);
+
+    alert("Errore nel caricamento del giocatore.");
+
+    return;
+  }
+
+  const container =
+    document.getElementById("players-content");
+
+  container.innerHTML = `
+
+    <div class="player-form">
+
+      <h3>Modifica giocatore</h3>
+
+      <div class="form-grid">
+
+        <input
+          id="player-first-name"
+          type="text"
+          value="${escapeHtml(data.first_name)}"
+          placeholder="Nome"
+        >
+
+        <input
+          id="player-last-name"
+          type="text"
+          value="${escapeHtml(data.last_name)}"
+          placeholder="Cognome"
+        >
+
+        <input
+          id="player-phone"
+          type="text"
+          value="${escapeHtml(data.phone || "")}"
+          placeholder="Telefono"
+        >
+
+        <input
+          id="player-email"
+          type="email"
+          value="${escapeHtml(data.email || "")}"
+          placeholder="Email"
+        >
+
+        <select id="player-level">
+
+          <option value="">Livello</option>
+
+          <option
+            value="Principiante"
+            ${data.level === "Principiante" ? "selected" : ""}
+          >
+            Principiante
+          </option>
+
+          <option
+            value="Intermedio"
+            ${data.level === "Intermedio" ? "selected" : ""}
+          >
+            Intermedio
+          </option>
+
+          <option
+            value="Avanzato"
+            ${data.level === "Avanzato" ? "selected" : ""}
+          >
+            Avanzato
+          </option>
+
+          <option
+            value="Agonista"
+            ${data.level === "Agonista" ? "selected" : ""}
+          >
+            Agonista
+          </option>
+
+        </select>
+
+        <textarea
+          id="player-notes"
+          placeholder="Note"
+        >${escapeHtml(data.notes || "")}</textarea>
+
+      </div>
+
+      <div style="margin-top:20px">
+
+        <button
+          class="primary"
+          id="update-player"
+        >
+          Salva modifiche
+        </button>
+
+        <button
+          id="cancel-player"
+          style="
+            margin-left:8px;
+            padding:11px 16px;
+            border:0;
+            border-radius:9px;
+            cursor:pointer;
+          "
+        >
+          Annulla
+        </button>
+
+      </div>
+
+      <p id="player-message"></p>
+
+    </div>
+  `;
+
+  document
+    .getElementById("update-player")
+    .addEventListener("click", () => updatePlayer(id));
+
+  document
+    .getElementById("cancel-player")
+    .addEventListener("click", loadPlayers);
+}
+
+
+async function updatePlayer(id) {
+
+  const firstName =
+    document.getElementById("player-first-name").value.trim();
+
+  const lastName =
+    document.getElementById("player-last-name").value.trim();
+
+  const phone =
+    document.getElementById("player-phone").value.trim();
+
+  const email =
+    document.getElementById("player-email").value.trim();
+
+  const level =
+    document.getElementById("player-level").value;
+
+  const notes =
+    document.getElementById("player-notes").value.trim();
+
+  const message =
+    document.getElementById("player-message");
+
+  if (!firstName || !lastName) {
+
+    message.textContent =
+      "Inserisci almeno nome e cognome.";
+
+    return;
+  }
+
+  message.textContent =
+    "Salvataggio modifiche...";
+
+  const { error } =
+    await supabaseClient
+      .from("players")
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone || null,
+        email: email || null,
+        level: level || null,
+        notes: notes || null
+      })
+      .eq("id", id);
+
+  if (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "Errore durante la modifica.";
+
+    return;
+  }
+
+  message.textContent =
+    "Modifiche salvate!";
+
+  await loadDashboard();
+
+  setTimeout(() => {
+    loadPlayers();
+  }, 700);
+}
+
+
+/* ELIMINA GIOCATORE */
+
+async function deletePlayer(id) {
+
+  const conferma =
+    confirm("Vuoi davvero eliminare questo giocatore?");
+
+  if (!conferma) {
+    return;
+  }
+
+  const { error } =
+    await supabaseClient
+      .from("players")
+      .delete()
+      .eq("id", id);
+
+  if (error) {
+
+    console.error(error);
+
+    alert("Errore durante l'eliminazione.");
+
+    return;
+  }
+
+  await loadDashboard();
+
+  await loadPlayers();
+}
+
+
+/* PROTEZIONE TESTO */
+
+function escapeHtml(value) {
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+/* LOGOUT */
 
 async function logout() {
 
@@ -605,7 +843,6 @@ async function logout() {
   await supabaseClient.auth.signOut();
 
   window.location.reload();
-
 }
 
 
