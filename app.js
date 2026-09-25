@@ -222,6 +222,9 @@ if (sectionId === "courts") {
 if (sectionId === "payments") {
   loadPayments();
 }
+      if (sectionId === "tournaments") {
+  loadTournaments();
+}
     });
   });
 }
@@ -1831,6 +1834,321 @@ async function loadPayments() {
 
         <td style="padding:12px;border-top:1px solid #e2e8ea;">
           ${escapeHtml(payment.description || "-")}
+        </td>
+
+      </tr>
+    `;
+  });
+
+  html += `
+
+        </tbody>
+
+      </table>
+
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+/* TORNEI */
+
+async function openTournamentForm() {
+
+  const container =
+    document.getElementById("tournaments-content");
+
+  container.innerHTML = `
+
+    <div class="player-form">
+
+      <h3>Nuovo torneo</h3>
+
+      <div class="form-grid">
+
+        <input
+          id="tournament-name"
+          type="text"
+          placeholder="Nome torneo"
+        >
+
+        <input
+          id="tournament-category"
+          type="text"
+          placeholder="Categoria"
+        >
+
+        <input
+          id="tournament-start"
+          type="date"
+        >
+
+        <input
+          id="tournament-end"
+          type="date"
+        >
+
+        <select id="tournament-status">
+
+          <option value="planned">
+            Programmato
+          </option>
+
+          <option value="active">
+            In corso
+          </option>
+
+          <option value="completed">
+            Concluso
+          </option>
+
+        </select>
+
+        <textarea
+          id="tournament-description"
+          placeholder="Descrizione"
+        ></textarea>
+
+      </div>
+
+      <div style="margin-top:20px">
+
+        <button
+          class="primary"
+          id="save-tournament"
+        >
+          Salva torneo
+        </button>
+
+        <button
+          id="cancel-tournament"
+          style="
+            margin-left:8px;
+            padding:11px 16px;
+            border:0;
+            border-radius:9px;
+            cursor:pointer;
+          "
+        >
+          Annulla
+        </button>
+
+      </div>
+
+      <p id="tournament-message"></p>
+
+    </div>
+  `;
+
+  document
+    .getElementById("save-tournament")
+    .addEventListener(
+      "click",
+      saveTournament
+    );
+
+  document
+    .getElementById("cancel-tournament")
+    .addEventListener(
+      "click",
+      loadTournaments
+    );
+}
+
+
+async function saveTournament() {
+
+  const name =
+    document
+      .getElementById("tournament-name")
+      .value
+      .trim();
+
+  const category =
+    document
+      .getElementById("tournament-category")
+      .value
+      .trim();
+
+  const startDate =
+    document
+      .getElementById("tournament-start")
+      .value;
+
+  const endDate =
+    document
+      .getElementById("tournament-end")
+      .value;
+
+  const status =
+    document
+      .getElementById("tournament-status")
+      .value;
+
+  const description =
+    document
+      .getElementById("tournament-description")
+      .value
+      .trim();
+
+  const message =
+    document
+      .getElementById("tournament-message");
+
+  if (!name) {
+
+    message.textContent =
+      "Inserisci il nome del torneo.";
+
+    return;
+  }
+
+  message.textContent =
+    "Salvataggio in corso...";
+
+  const { error } =
+    await supabaseClient
+      .from("tournaments")
+      .insert({
+
+        name: name,
+
+        category:
+          category || null,
+
+        start_date:
+          startDate || null,
+
+        end_date:
+          endDate || null,
+
+        status:
+          status,
+
+        description:
+          description || null
+
+      });
+
+  if (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "Errore durante il salvataggio.";
+
+    return;
+  }
+
+  message.textContent =
+    "Torneo salvato!";
+
+  await loadDashboard();
+
+  setTimeout(() => {
+    loadTournaments();
+  }, 700);
+}
+
+
+async function loadTournaments() {
+
+  const container =
+    document.getElementById("tournaments-content");
+
+  container.innerHTML =
+    "Caricamento tornei...";
+
+  const { data, error } =
+    await supabaseClient
+      .from("tournaments")
+      .select("*")
+      .order("start_date", {
+        ascending: false
+      });
+
+  if (error) {
+
+    console.error(error);
+
+    container.innerHTML =
+      "Errore nel caricamento dei tornei.";
+
+    return;
+  }
+
+  if (!data || data.length === 0) {
+
+    container.innerHTML =
+      "Nessun torneo presente.";
+
+    return;
+  }
+
+  let html = `
+
+    <div style="overflow-x:auto;">
+
+      <table style="
+        width:100%;
+        border-collapse:collapse;
+      ">
+
+        <thead>
+
+          <tr>
+
+            <th style="text-align:left;padding:12px;">
+              Torneo
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Categoria
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Inizio
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Fine
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Stato
+            </th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+  `;
+
+  data.forEach(tournament => {
+
+    html += `
+
+      <tr>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(tournament.name)}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(tournament.category || "-")}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(tournament.start_date || "-")}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(tournament.end_date || "-")}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(tournament.status || "-")}
         </td>
 
       </tr>
