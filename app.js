@@ -2411,6 +2411,96 @@ if (teamsError) {
       loadTournaments
     );
 
+    const { data: matches, error: matchesError } =
+    await supabaseClient
+      .from("tournament_matches")
+      .select("*")
+      .eq("tournament_id", tournamentId)
+      .order("round_number");
+
+  if (matchesError) {
+    console.error(matchesError);
+    return;
+  }
+
+  const calendarContainer =
+    document.getElementById("tournament-calendar");
+
+  if (calendarContainer) {
+
+    if (!matches || matches.length === 0) {
+
+      calendarContainer.innerHTML = `
+        <div class="panel">
+          <h3>Calendario</h3>
+          <p>Nessuna partita ancora generata.</p>
+        </div>
+      `;
+
+    } else {
+
+      let calendarHtml = `
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Calendario</h2>
+            <span>${matches.length} partite</span>
+          </div>
+      `;
+
+      for (let round = 1; round <= 5; round++) {
+
+        const roundMatches =
+          matches.filter(
+            match => match.round_number === round
+          );
+
+        calendarHtml += `
+          <div style="margin-top:20px;">
+            <h3>Giornata ${round}</h3>
+        `;
+
+        roundMatches.forEach(match => {
+
+          const team1 =
+            teams.find(
+              team => team.id === match.team1_id
+            );
+
+          const team2 =
+            teams.find(
+              team => team.id === match.team2_id
+            );
+
+          calendarHtml += `
+            <div
+              style="
+                padding:12px;
+                border-bottom:1px solid #e2e8ea;
+              "
+            >
+              <strong>
+                ${escapeHtml(team1 ? team1.name : "Formazione")}
+                -
+                ${escapeHtml(team2 ? team2.name : "Formazione")}
+              </strong>
+            </div>
+          `;
+
+        });
+
+        calendarHtml += `
+          </div>
+        `;
+      }
+
+      calendarHtml += `
+        </div>
+      `;
+
+      calendarContainer.innerHTML =
+        calendarHtml;
+    }
+  }
 document
   .getElementById("add-team")
   .addEventListener(
