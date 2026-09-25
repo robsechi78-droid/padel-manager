@@ -2174,7 +2174,15 @@ async function loadTournaments() {
         </td>
 
         <td style="padding:12px;border-top:1px solid #e2e8ea;">
-          ${escapeHtml(tournament.status || "-")}
+          ${
+  tournament.status === "planned"
+    ? "Programmato"
+    : tournament.status === "active"
+      ? "In corso"
+      : tournament.status === "completed"
+        ? "Concluso"
+        : escapeHtml(tournament.status || "-")
+}
         </td>
 
       </tr>
