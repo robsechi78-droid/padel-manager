@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://qrsvakoflmuertillpod.supabase.co";
-const SUPABASE_KEY = "INSERIREMO_LA_CHIAVE_PUBBLICA";
+const SUPABASE_KEY = "sb_publishable_xMBIXZPhX7mkSIMfQT3HBA_sPnhjFb9";
 
 let supabaseClient;
 
