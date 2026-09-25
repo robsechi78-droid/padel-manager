@@ -241,8 +241,12 @@ if (button.textContent.includes("Nuovo campo")) {
     if (button.textContent.includes("Nuova prenotazione")) {
   button.addEventListener("click", openBookingForm);
 }
-    
-if (button.textContent.includes("Nuovo pagamento")) {
+
+    if (button.textContent.includes("Nuovo torneo")) {
+  button.addEventListener("click", openTournamentForm);
+}
+
+    if (button.textContent.includes("Nuovo pagamento")) {
   button.addEventListener("click", openPaymentForm);
 }
   });
