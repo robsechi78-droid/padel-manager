@@ -2245,6 +2245,18 @@ async function openTournamentManager(tournamentId) {
       .eq("id", tournamentId)
       .single();
 
+  const { data: teams, error: teamsError } =
+  await supabaseClient
+    .from("tournament_teams")
+    .select("*")
+    .eq("tournament_id", tournamentId)
+    .order("name");
+
+if (teamsError) {
+
+  console.error(teamsError);
+
+}
   if (error) {
 
     console.error(error);
@@ -2285,9 +2297,9 @@ async function openTournamentManager(tournamentId) {
       <div class="cards">
 
         <div class="card">
-          <span>Formazioni</span>
-          <strong>0 / 6</strong>
-        </div>
+  <span>Formazioni</span>
+  <strong>${teams ? teams.length : 0} / 6</strong>
+</div>
 
         <div class="card">
           <span>Giornate</span>
@@ -2316,9 +2328,36 @@ async function openTournamentManager(tournamentId) {
 
         </div>
 
-        <div id="teams-content" class="empty">
+        <div id="teams-content">
+
+  ${
+    teams && teams.length > 0
+      ? teams.map(team => `
+          <div style="
+            padding:15px;
+            border-top:1px solid #e2e8ea;
+          ">
+
+            <strong>
+              ${escapeHtml(team.name)}
+            </strong>
+
+            <div style="margin-top:6px;">
+              ${escapeHtml(team.player1_name || "-")}
+              &
+              ${escapeHtml(team.player2_name || "-")}
+            </div>
+
+          </div>
+        `).join("")
+      : `
+        <div class="empty">
           Nessuna formazione inserita.
         </div>
+      `
+  }
+
+</div>
 
       </div>
 
