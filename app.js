@@ -4,44 +4,215 @@ const SUPABASE_KEY = "sb_publishable_xMBIXZPhX7mkSIMfQT3HBA_sPnhjFb9";
 let supabaseClient = null;
 
 async function init() {
-  try {
-    const script = document.createElement("script");
 
-    script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+  const script = document.createElement("script");
 
-    script.onload = async () => {
-      supabaseClient = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-      );
+  script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+
+  script.onload = async () => {
+
+    supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    setupNavigation();
+    setupButtons();
+
+    const { data } = await supabaseClient.auth.getSession();
+
+    if (data.session) {
+
+      showApp();
 
       document.getElementById("status").textContent =
-        "Connessione a Supabase riuscita.";
+        "Accesso effettuato. Connessione a Supabase riuscita.";
 
-      setupNavigation();
-      setupButtons();
       await loadDashboard();
-    };
 
-    script.onerror = () => {
-      document.getElementById("status").textContent =
-        "Errore nel caricamento di Supabase.";
-    };
+    } else {
 
-    document.head.appendChild(script);
+      showLogin();
 
-  } catch (error) {
-    console.error(error);
+    }
+
+  };
+
+  script.onerror = () => {
 
     document.getElementById("status").textContent =
-      "Errore di connessione.";
-  }
+      "Errore nel caricamento di Supabase.";
+
+  };
+
+  document.head.appendChild(script);
+
 }
 
 
-/* -------------------------
-   NAVIGAZIONE
-------------------------- */
+function showLogin() {
+
+  document.querySelector(".app").style.display = "none";
+
+  let login = document.getElementById("login-screen");
+
+  if (!login) {
+
+    login = document.createElement("div");
+
+    login.id = "login-screen";
+
+    login.innerHTML = `
+
+      <div style="
+        min-height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:#f4f7f8;
+        padding:20px;
+      ">
+
+        <div style="
+          width:100%;
+          max-width:400px;
+          background:white;
+          padding:30px;
+          border-radius:16px;
+          border:1px solid #e2e8ea;
+          box-shadow:0 10px 30px rgba(0,0,0,0.08);
+        ">
+
+          <h1 style="margin-top:0;">
+            🎾 Padel Manager
+          </h1>
+
+          <p style="color:#728085;">
+            Accedi al gestionale del centro padel
+          </p>
+
+          <input
+            id="login-email"
+            type="email"
+            placeholder="Email"
+            style="
+              width:100%;
+              padding:12px;
+              margin:8px 0;
+              border:1px solid #ccd5d8;
+              border-radius:8px;
+            "
+          >
+
+          <input
+            id="login-password"
+            type="password"
+            placeholder="Password"
+            style="
+              width:100%;
+              padding:12px;
+              margin:8px 0;
+              border:1px solid #ccd5d8;
+              border-radius:8px;
+            "
+          >
+
+          <button
+            id="login-button"
+            class="primary"
+            style="
+              width:100%;
+              margin-top:12px;
+            "
+          >
+            Accedi
+          </button>
+
+          <p
+            id="login-message"
+            style="margin-top:15px;"
+          ></p>
+
+        </div>
+
+      </div>
+
+    `;
+
+    document.body.appendChild(login);
+
+    document
+      .getElementById("login-button")
+      .addEventListener("click", loginUser);
+
+  }
+
+  login.style.display = "block";
+}
+
+
+function showApp() {
+
+  document.querySelector(".app").style.display = "flex";
+
+  const login = document.getElementById("login-screen");
+
+  if (login) {
+    login.style.display = "none";
+  }
+
+}
+
+
+async function loginUser() {
+
+  const email =
+    document.getElementById("login-email").value.trim();
+
+  const password =
+    document.getElementById("login-password").value;
+
+  const message =
+    document.getElementById("login-message");
+
+  if (!email || !password) {
+
+    message.textContent =
+      "Inserisci email e password.";
+
+    return;
+
+  }
+
+  message.textContent =
+    "Accesso in corso...";
+
+  const { error } =
+    await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+
+  if (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "Email o password non corrette.";
+
+    return;
+
+  }
+
+  showApp();
+
+  document.getElementById("status").textContent =
+    "Accesso effettuato. Connessione a Supabase riuscita.";
+
+  await loadDashboard();
+
+}
+
 
 function setupNavigation() {
 
@@ -61,7 +232,9 @@ function setupNavigation() {
         section.classList.remove("active");
       });
 
-      document.getElementById(sectionId).classList.add("active");
+      document
+        .getElementById(sectionId)
+        .classList.add("active");
 
       document.getElementById("page-title").textContent =
         button.textContent.trim();
@@ -77,15 +250,9 @@ function setupNavigation() {
 }
 
 
-/* -------------------------
-   PULSANTI
-------------------------- */
-
 function setupButtons() {
 
-  const buttons = document.querySelectorAll(".primary");
-
-  buttons.forEach(button => {
+  document.querySelectorAll(".primary").forEach(button => {
 
     if (button.textContent.includes("Nuovo giocatore")) {
 
@@ -98,50 +265,62 @@ function setupButtons() {
 }
 
 
-/* -------------------------
-   DASHBOARD
-------------------------- */
-
 async function countRows(tableName) {
 
-  const { count, error } = await supabaseClient
-    .from(tableName)
-    .select("*", {
-      count: "exact",
-      head: true
-    });
+  const { count, error } =
+    await supabaseClient
+      .from(tableName)
+      .select("*", {
+        count: "exact",
+        head: true
+      });
 
   if (error) {
+
     console.error(`Errore ${tableName}:`, error);
+
     return 0;
+
   }
 
   return count || 0;
+
 }
 
 
 async function loadDashboard() {
 
-  const players = await countRows("players");
-  const courts = await countRows("courts");
-  const bookings = await countRows("bookings");
-  const tournaments = await countRows("tournaments");
+  const players =
+    await countRows("players");
 
-  document.getElementById("players-count").textContent = players;
-  document.getElementById("courts-count").textContent = courts;
-  document.getElementById("bookings-count").textContent = bookings;
-  document.getElementById("tournaments-count").textContent = tournaments;
+  const courts =
+    await countRows("courts");
+
+  const bookings =
+    await countRows("bookings");
+
+  const tournaments =
+    await countRows("tournaments");
+
+  document.getElementById("players-count").textContent =
+    players;
+
+  document.getElementById("courts-count").textContent =
+    courts;
+
+  document.getElementById("bookings-count").textContent =
+    bookings;
+
+  document.getElementById("tournaments-count").textContent =
+    tournaments;
 
 }
 
 
-/* -------------------------
-   FORM GIOCATORE
-------------------------- */
-
 function openPlayerForm() {
 
-  const container = document.getElementById("players-content");
+  const container =
+    document.getElementById("players-content");
 
   container.innerHTML = `
 
@@ -202,8 +381,14 @@ function openPlayerForm() {
         </button>
 
         <button
-          class="secondary"
           id="cancel-player"
+          style="
+            margin-left:8px;
+            padding:11px 16px;
+            border:0;
+            border-radius:9px;
+            cursor:pointer;
+          "
         >
           Annulla
         </button>
@@ -226,10 +411,6 @@ function openPlayerForm() {
 
 }
 
-
-/* -------------------------
-   SALVATAGGIO GIOCATORE
-------------------------- */
 
 async function savePlayer() {
 
@@ -269,18 +450,19 @@ async function savePlayer() {
     "Salvataggio in corso...";
 
 
-  const { error } = await supabaseClient
-    .from("players")
-    .insert({
+  const { error } =
+    await supabaseClient
+      .from("players")
+      .insert({
 
-      first_name: firstName,
-      last_name: lastName,
-      phone: phone || null,
-      email: email || null,
-      level: level || null,
-      notes: notes || null
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone || null,
+        email: email || null,
+        level: level || null,
+        notes: notes || null
 
-    });
+      });
 
 
   if (error) {
@@ -298,7 +480,6 @@ async function savePlayer() {
   message.textContent =
     "Giocatore salvato!";
 
-
   await loadDashboard();
 
   setTimeout(() => {
@@ -310,10 +491,6 @@ async function savePlayer() {
 }
 
 
-/* -------------------------
-   ELENCO GIOCATORI
-------------------------- */
-
 async function loadPlayers() {
 
   const container =
@@ -323,12 +500,13 @@ async function loadPlayers() {
     "Caricamento giocatori...";
 
 
-  const { data, error } = await supabaseClient
-    .from("players")
-    .select("*")
-    .order("last_name", {
-      ascending: true
-    });
+  const { data, error } =
+    await supabaseClient
+      .from("players")
+      .select("*")
+      .order("last_name", {
+        ascending: true
+      });
 
 
   if (error) {
@@ -418,35 +596,18 @@ async function loadPlayers() {
 }
 
 
-/* -------------------------
-   LOGOUT
-------------------------- */
-
 async function logout() {
 
   if (!supabaseClient) {
     return;
   }
 
-  const { error } =
-    await supabaseClient.auth.signOut();
-
-  if (error) {
-
-    alert("Errore durante l'uscita.");
-
-    return;
-
-  }
+  await supabaseClient.auth.signOut();
 
   window.location.reload();
 
 }
 
-
-/* -------------------------
-   AVVIO
-------------------------- */
 
 document.addEventListener("DOMContentLoaded", () => {
 
