@@ -855,3 +855,224 @@ document.addEventListener("DOMContentLoaded", () => {
   init();
 
 });
+
+/* CAMPI */
+
+function openCourtForm() {
+
+  const container =
+    document.getElementById("courts-content");
+
+  container.innerHTML = `
+
+    <div class="player-form">
+
+      <h3>Nuovo campo</h3>
+
+      <div class="form-grid">
+
+        <input
+          id="court-name"
+          type="text"
+          placeholder="Nome campo"
+        >
+
+        <select id="court-type">
+
+          <option value="">Tipologia</option>
+          <option value="Indoor">Indoor</option>
+          <option value="Outdoor">Outdoor</option>
+
+        </select>
+
+      </div>
+
+      <div style="margin-top:20px">
+
+        <button
+          class="primary"
+          id="save-court"
+        >
+          Salva campo
+        </button>
+
+        <button
+          id="cancel-court"
+          style="
+            margin-left:8px;
+            padding:11px 16px;
+            border:0;
+            border-radius:9px;
+            cursor:pointer;
+          "
+        >
+          Annulla
+        </button>
+
+      </div>
+
+      <p id="court-message"></p>
+
+    </div>
+  `;
+
+  document
+    .getElementById("save-court")
+    .addEventListener("click", saveCourt);
+
+  document
+    .getElementById("cancel-court")
+    .addEventListener("click", loadCourts);
+}
+
+
+async function saveCourt() {
+
+  const name =
+    document.getElementById("court-name").value.trim();
+
+  const type =
+    document.getElementById("court-type").value;
+
+  const message =
+    document.getElementById("court-message");
+
+  if (!name) {
+
+    message.textContent =
+      "Inserisci il nome del campo.";
+
+    return;
+  }
+
+  message.textContent =
+    "Salvataggio in corso...";
+
+  const { error } =
+    await supabaseClient
+      .from("courts")
+      .insert({
+        name: name,
+        type: type || null
+      });
+
+  if (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "Errore durante il salvataggio.";
+
+    return;
+  }
+
+  message.textContent =
+    "Campo salvato!";
+
+  await loadDashboard();
+
+  setTimeout(() => {
+    loadCourts();
+  }, 700);
+}
+
+
+async function loadCourts() {
+
+  const container =
+    document.getElementById("courts-content");
+
+  container.innerHTML =
+    "Caricamento campi...";
+
+  const { data, error } =
+    await supabaseClient
+      .from("courts")
+      .select("*")
+      .order("name", {
+        ascending: true
+      });
+
+  if (error) {
+
+    console.error(error);
+
+    container.innerHTML =
+      "Errore nel caricamento dei campi.";
+
+    return;
+  }
+
+  if (!data || data.length === 0) {
+
+    container.innerHTML =
+      "Nessun campo presente.";
+
+    return;
+  }
+
+  let html = `
+
+    <div style="overflow-x:auto;">
+
+      <table style="
+        width:100%;
+        border-collapse:collapse;
+      ">
+
+        <thead>
+
+          <tr>
+
+            <th style="text-align:left;padding:12px;">
+              Campo
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Tipologia
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Stato
+            </th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+  `;
+
+  data.forEach(court => {
+
+    html += `
+
+      <tr>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(court.name)}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(court.type || "-")}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${court.active ? "Attivo" : "Non attivo"}
+        </td>
+
+      </tr>
+    `;
+  });
+
+  html += `
+
+        </tbody>
+
+      </table>
+
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
