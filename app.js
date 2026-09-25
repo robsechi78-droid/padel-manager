@@ -209,9 +209,13 @@ function setupNavigation() {
       document.getElementById("page-title").textContent =
         button.textContent.trim();
 
-      if (sectionId === "players") {
-        loadPlayers();
-      }
+ if (sectionId === "players") {
+  loadPlayers();
+}
+
+if (sectionId === "courts") {
+  loadCourts();
+}
     });
   });
 }
@@ -220,9 +224,13 @@ function setupNavigation() {
 function setupButtons() {
   document.querySelectorAll(".primary").forEach(button => {
 
-    if (button.textContent.includes("Nuovo giocatore")) {
-      button.addEventListener("click", openPlayerForm);
-    }
+  if (button.textContent.includes("Nuovo giocatore")) {
+  button.addEventListener("click", openPlayerForm);
+}
+
+if (button.textContent.includes("Nuovo campo")) {
+  button.addEventListener("click", openCourtForm);
+}
 
   });
 }
