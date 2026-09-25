@@ -2259,17 +2259,13 @@ document.addEventListener("click", async function(event) {
     return;
   }
 
-    const { data: matches, error: matchesError } =
-    await supabaseClient
-      .from("tournament_matches")
-      .select(`
-        *,
-        team1:tournament_teams!team1_id(name),
-        team2:tournament_teams!team2_id(name)
-      `)
-      .eq("tournament_id", tournamentId)
-      .order("round_number")
-      .order("match_date");
+ const { data: matches, error: matchesError } =
+  await supabaseClient
+    .from("tournament_matches")
+    .select("*")
+    .eq("tournament_id", tournamentId)
+    .order("round_number")
+    .order("match_date");
 
   if (matchesError) {
     console.error(matchesError);
