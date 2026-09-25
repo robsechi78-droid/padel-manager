@@ -219,6 +219,9 @@ if (sectionId === "courts") {
       if (sectionId === "bookings") {
   loadBookings();
 }
+if (sectionId === "payments") {
+  loadPayments();
+}
     });
   });
 }
@@ -237,6 +240,10 @@ if (button.textContent.includes("Nuovo campo")) {
 
     if (button.textContent.includes("Nuova prenotazione")) {
   button.addEventListener("click", openBookingForm);
+}
+    
+if (button.textContent.includes("Nuovo pagamento")) {
+  button.addEventListener("click", openPaymentForm);
 }
   });
 }
@@ -1470,6 +1477,356 @@ async function loadBookings() {
 
         <td style="padding:12px;border-top:1px solid #e2e8ea;">
           ${booking.paid ? "Pagato" : "Non pagato"}
+        </td>
+
+      </tr>
+    `;
+  });
+
+  html += `
+
+        </tbody>
+
+      </table>
+
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+/* PAGAMENTI */
+
+async function openPaymentForm() {
+
+  const container =
+    document.getElementById("payments-content");
+
+  container.innerHTML =
+    "Caricamento dati...";
+
+  const { data: players, error: playersError } =
+    await supabaseClient
+      .from("players")
+      .select("id, first_name, last_name")
+      .eq("active", true)
+      .order("last_name");
+
+  if (playersError) {
+
+    console.error(playersError);
+
+    container.innerHTML =
+      "Errore nel caricamento dei giocatori.";
+
+    return;
+  }
+
+  let playerOptions = `
+    <option value="">Seleziona giocatore</option>
+  `;
+
+  players.forEach(player => {
+
+    playerOptions += `
+      <option value="${player.id}">
+        ${escapeHtml(player.last_name)}
+        ${escapeHtml(player.first_name)}
+      </option>
+    `;
+  });
+
+  container.innerHTML = `
+
+    <div class="player-form">
+
+      <h3>Nuovo pagamento</h3>
+
+      <div class="form-grid">
+
+        <select id="payment-player">
+          ${playerOptions}
+        </select>
+
+        <input
+          id="payment-amount"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="Importo €"
+        >
+
+        <input
+          id="payment-date"
+          type="date"
+        >
+
+        <select id="payment-method">
+
+          <option value="">
+            Metodo di pagamento
+          </option>
+
+          <option value="Contanti">
+            Contanti
+          </option>
+
+          <option value="POS">
+            POS
+          </option>
+
+          <option value="Bonifico">
+            Bonifico
+          </option>
+
+          <option value="Altro">
+            Altro
+          </option>
+
+        </select>
+
+        <input
+          id="payment-description"
+          type="text"
+          placeholder="Descrizione"
+        >
+
+        <textarea
+          id="payment-notes"
+          placeholder="Note"
+        ></textarea>
+
+      </div>
+
+      <div style="margin-top:20px">
+
+        <button
+          class="primary"
+          id="save-payment"
+        >
+          Salva pagamento
+        </button>
+
+        <button
+          id="cancel-payment"
+          style="
+            margin-left:8px;
+            padding:11px 16px;
+            border:0;
+            border-radius:9px;
+            cursor:pointer;
+          "
+        >
+          Annulla
+        </button>
+
+      </div>
+
+      <p id="payment-message"></p>
+
+    </div>
+  `;
+
+  document
+    .getElementById("payment-date")
+    .value =
+    new Date().toISOString().split("T")[0];
+
+  document
+    .getElementById("save-payment")
+    .addEventListener("click", savePayment);
+
+  document
+    .getElementById("cancel-payment")
+    .addEventListener("click", loadPayments);
+}
+
+
+async function savePayment() {
+
+  const playerId =
+    document.getElementById("payment-player").value;
+
+  const amount =
+    document.getElementById("payment-amount").value;
+
+  const date =
+    document.getElementById("payment-date").value;
+
+  const method =
+    document.getElementById("payment-method").value;
+
+  const description =
+    document.getElementById("payment-description").value.trim();
+
+  const notes =
+    document.getElementById("payment-notes").value.trim();
+
+  const message =
+    document.getElementById("payment-message");
+
+  if (!amount || Number(amount) <= 0 || !date) {
+
+    message.textContent =
+      "Inserisci almeno importo e data.";
+
+    return;
+  }
+
+  message.textContent =
+    "Salvataggio in corso...";
+
+  const { error } =
+    await supabaseClient
+      .from("payments")
+      .insert({
+
+        player_id:
+          playerId || null,
+
+        amount:
+          Number(amount),
+
+        payment_date:
+          date,
+
+        payment_method:
+          method || null,
+
+        description:
+          description || null,
+
+        notes:
+          notes || null
+
+      });
+
+  if (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "Errore durante il salvataggio.";
+
+    return;
+  }
+
+  message.textContent =
+    "Pagamento salvato!";
+
+  await loadDashboard();
+
+  setTimeout(() => {
+    loadPayments();
+  }, 700);
+}
+
+
+async function loadPayments() {
+
+  const container =
+    document.getElementById("payments-content");
+
+  container.innerHTML =
+    "Caricamento pagamenti...";
+
+  const { data, error } =
+    await supabaseClient
+      .from("payments")
+      .select(`
+        *,
+        players(first_name, last_name)
+      `)
+      .order("payment_date", {
+        ascending: false
+      });
+
+  if (error) {
+
+    console.error(error);
+
+    container.innerHTML =
+      "Errore nel caricamento dei pagamenti.";
+
+    return;
+  }
+
+  if (!data || data.length === 0) {
+
+    container.innerHTML =
+      "Nessun pagamento presente.";
+
+    return;
+  }
+
+  let html = `
+
+    <div style="overflow-x:auto;">
+
+      <table style="
+        width:100%;
+        border-collapse:collapse;
+      ">
+
+        <thead>
+
+          <tr>
+
+            <th style="text-align:left;padding:12px;">
+              Data
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Giocatore
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Importo
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Metodo
+            </th>
+
+            <th style="text-align:left;padding:12px;">
+              Descrizione
+            </th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+  `;
+
+  data.forEach(payment => {
+
+    const player =
+      payment.players
+        ? `${payment.players.last_name} ${payment.players.first_name}`
+        : "-";
+
+    html += `
+
+      <tr>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(payment.payment_date)}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(player)}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          € ${Number(payment.amount || 0).toFixed(2)}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(payment.payment_method || "-")}
+        </td>
+
+        <td style="padding:12px;border-top:1px solid #e2e8ea;">
+          ${escapeHtml(payment.description || "-")}
         </td>
 
       </tr>
