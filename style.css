@@ -1,0 +1,179 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f7f8;
+  color: #172126;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 245px;
+  background: #10242a;
+  color: white;
+  padding: 25px 16px;
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 10px;
+  margin-bottom: 35px;
+}
+
+.nav {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #c8d2d5;
+  padding: 13px;
+  margin: 3px 0;
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.nav:hover,
+.nav.active {
+  background: #1d3b43;
+  color: white;
+}
+
+main {
+  flex: 1;
+  padding: 30px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+h1 {
+  margin: 5px 0;
+}
+
+.primary {
+  background: #168c79;
+  border: 0;
+  color: white;
+  padding: 11px 16px;
+  border-radius: 9px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.primary:hover {
+  background: #117665;
+}
+
+.section {
+  display: none;
+}
+
+.section.active {
+  display: block;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.card,
+.panel {
+  background: white;
+  border: 1px solid #e2e8ea;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.card span {
+  color: #728085;
+  font-size: 13px;
+}
+
+.card strong {
+  display: block;
+  font-size: 28px;
+  margin-top: 8px;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 13px 10px;
+  text-align: left;
+  border-bottom: 1px solid #edf0f1;
+}
+
+th {
+  color: #758286;
+  font-size: 12px;
+}
+
+input,
+select {
+  border: 1px solid #d7dfe1;
+  border-radius: 8px;
+  padding: 10px;
+  font: inherit;
+}
+
+.empty {
+  text-align: center;
+  padding: 70px;
+  color: #758286;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    width: 190px;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .app {
+    display: block;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  main {
+    padding: 20px;
+  }
+}
