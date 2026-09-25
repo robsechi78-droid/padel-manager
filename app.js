@@ -2348,6 +2348,32 @@ if (teamsError) {
               ${escapeHtml(team.player2_name || "-")}
             </div>
 
+<div style="margin-top:10px;">
+
+  <button
+    class="primary edit-team"
+    data-id="${team.id}"
+    data-tournament="${tournamentId}"
+  >
+    Modifica
+  </button>
+
+  <button
+    class="delete-team"
+    data-id="${team.id}"
+    data-tournament="${tournamentId}"
+    style="
+      margin-left:8px;
+      padding:11px 16px;
+      border:0;
+      border-radius:9px;
+      cursor:pointer;
+    "
+  >
+    Elimina
+  </button>
+
+</div>
           </div>
         `).join("")
       : `
@@ -2371,16 +2397,25 @@ if (teamsError) {
       loadTournaments
     );
 
-  document
-    .getElementById("add-team")
-    .addEventListener(
-      "click",
-      function() {
+document
+  .getElementById("add-team")
+  .addEventListener(
+    "click",
+    function() {
 
-        openTeamForm(tournamentId);
+      if (teams && teams.length >= 6) {
 
+        alert(
+          "Questo torneo può avere un massimo di 6 formazioni."
+        );
+
+        return;
       }
-    );
+
+      openTeamForm(tournamentId);
+
+    }
+  );
 
 }
 function openTeamForm(tournamentId) {
@@ -2535,5 +2570,275 @@ async function saveTeam(tournamentId) {
   }
 
   openTournamentManager(tournamentId);
+
+}
+document.addEventListener("click", function(event) {
+
+  const editButton =
+    event.target.closest(".edit-team");
+
+  if (editButton) {
+
+    const teamId =
+      editButton.getAttribute("data-id");
+
+    const tournamentId =
+      editButton.getAttribute("data-tournament");
+
+    openEditTeamForm(
+      teamId,
+      tournamentId
+    );
+
+    return;
+  }
+
+  const deleteButton =
+    event.target.closest(".delete-team");
+
+  if (deleteButton) {
+
+    const teamId =
+      deleteButton.getAttribute("data-id");
+
+    const tournamentId =
+      deleteButton.getAttribute("data-tournament");
+
+    deleteTeam(
+      teamId,
+      tournamentId
+    );
+
+  }
+
+});
+
+
+async function openEditTeamForm(
+  teamId,
+  tournamentId
+) {
+
+  const container =
+    document.getElementById(
+      "tournaments-content"
+    );
+
+  container.innerHTML =
+    "Caricamento formazione...";
+
+  const { data: team, error } =
+    await supabaseClient
+      .from("tournament_teams")
+      .select("*")
+      .eq("id", teamId)
+      .single();
+
+  if (error) {
+
+    console.error(error);
+
+    container.innerHTML =
+      "Errore nel caricamento della formazione.";
+
+    return;
+  }
+
+  container.innerHTML = `
+
+    <div class="panel">
+
+      <h3>Modifica formazione</h3>
+
+      <div class="form-grid">
+
+        <input
+          id="edit-team-name"
+          type="text"
+          value="${escapeHtml(team.name)}"
+          placeholder="Nome formazione"
+        >
+
+        <input
+          id="edit-team-player1"
+          type="text"
+          value="${escapeHtml(team.player1_name || "")}"
+          placeholder="Giocatore 1"
+        >
+
+        <input
+          id="edit-team-player2"
+          type="text"
+          value="${escapeHtml(team.player2_name || "")}"
+          placeholder="Giocatore 2"
+        >
+
+      </div>
+
+      <div style="margin-top:20px">
+
+        <button
+          class="primary"
+          id="update-team"
+        >
+          Salva modifiche
+        </button>
+
+        <button
+          id="cancel-edit-team"
+          style="
+            margin-left:8px;
+            padding:11px 16px;
+            border:0;
+            border-radius:9px;
+            cursor:pointer;
+          "
+        >
+          Annulla
+        </button>
+
+      </div>
+
+      <p id="edit-team-message"></p>
+
+    </div>
+  `;
+
+  document
+    .getElementById("update-team")
+    .addEventListener(
+      "click",
+      function() {
+
+        updateTeam(
+          teamId,
+          tournamentId
+        );
+
+      }
+    );
+
+  document
+    .getElementById("cancel-edit-team")
+    .addEventListener(
+      "click",
+      function() {
+
+        openTournamentManager(
+          tournamentId
+        );
+
+      }
+    );
+
+}
+
+
+async function updateTeam(
+  teamId,
+  tournamentId
+) {
+
+  const name =
+    document
+      .getElementById("edit-team-name")
+      .value
+      .trim();
+
+  const player1 =
+    document
+      .getElementById("edit-team-player1")
+      .value
+      .trim();
+
+  const player2 =
+    document
+      .getElementById("edit-team-player2")
+      .value
+      .trim();
+
+  const message =
+    document.getElementById(
+      "edit-team-message"
+    );
+
+  if (!name || !player1 || !player2) {
+
+    message.textContent =
+      "Inserisci nome formazione e i due giocatori.";
+
+    return;
+  }
+
+  message.textContent =
+    "Salvataggio modifiche...";
+
+  const { error } =
+    await supabaseClient
+      .from("tournament_teams")
+      .update({
+
+        name: name,
+
+        player1_name:
+          player1,
+
+        player2_name:
+          player2
+
+      })
+      .eq("id", teamId);
+
+  if (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "Errore durante il salvataggio.";
+
+    return;
+  }
+
+  openTournamentManager(
+    tournamentId
+  );
+
+}
+
+
+async function deleteTeam(
+  teamId,
+  tournamentId
+) {
+
+  const confirmed =
+    confirm(
+      "Vuoi davvero eliminare questa formazione?"
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  const { error } =
+    await supabaseClient
+      .from("tournament_teams")
+      .delete()
+      .eq("id", teamId);
+
+  if (error) {
+
+    console.error(error);
+
+    alert(
+      "Errore durante l'eliminazione."
+    );
+
+    return;
+  }
+
+  openTournamentManager(
+    tournamentId
+  );
 
 }
