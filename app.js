@@ -2259,6 +2259,21 @@ document.addEventListener("click", async function(event) {
     return;
   }
 
+    const { data: matches, error: matchesError } =
+    await supabaseClient
+      .from("tournament_matches")
+      .select(`
+        *,
+        team1:tournament_teams!team1_id(name),
+        team2:tournament_teams!team2_id(name)
+      `)
+      .eq("tournament_id", tournamentId)
+      .order("round_number")
+      .order("match_date");
+
+  if (matchesError) {
+    console.error(matchesError);
+  }
   if (!teams || teams.length !== 6) {
     alert(
       "Per generare il calendario servono esattamente 6 formazioni."
@@ -2414,6 +2429,11 @@ if (teamsError) {
           <span>Partite</span>
           <strong>0</strong>
         </div>
+        <div
+  id="tournament-calendar"
+  style="margin-top:20px;"
+>
+</div>
 <div style="margin-top:20px;">
  <button
   class="primary"
