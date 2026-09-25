@@ -2229,6 +2229,110 @@ async function loadTournaments() {
 
 });
 
+document.addEventListener("click", async function(event) {
+
+  const button =
+    event.target.closest("#generate-calendar");
+
+  if (!button) {
+    return;
+  }
+
+  const tournamentId =
+    button.getAttribute("data-tournament");
+
+  if (!tournamentId) {
+    alert("Torneo non identificato.");
+    return;
+  }
+
+  const { data: teams, error: teamsError } =
+    await supabaseClient
+      .from("tournament_teams")
+      .select("*")
+      .eq("tournament_id", tournamentId)
+      .order("name");
+
+  if (teamsError) {
+    console.error(teamsError);
+    alert("Errore nel caricamento delle formazioni.");
+    return;
+  }
+
+  if (!teams || teams.length !== 6) {
+    alert(
+      "Per generare il calendario servono esattamente 6 formazioni."
+    );
+    return;
+  }
+
+  const { data: existingMatches, error: checkError } =
+    await supabaseClient
+      .from("tournament_matches")
+      .select("id")
+      .eq("tournament_id", tournamentId);
+
+  if (checkError) {
+    console.error(checkError);
+    alert("Errore nel controllo delle partite.");
+    return;
+  }
+
+  if (existingMatches && existingMatches.length > 0) {
+    alert("Il calendario di questo torneo è già stato generato.");
+    return;
+  }
+
+  const rotatingTeams = [...teams];
+  const matches = [];
+
+  for (let round = 1; round <= 5; round++) {
+
+    matches.push(
+      {
+        tournament_id: tournamentId,
+        round_number: round,
+        team1_id: rotatingTeams[0].id,
+        team2_id: rotatingTeams[5].id,
+        status: "scheduled"
+      },
+      {
+        tournament_id: tournamentId,
+        round_number: round,
+        team1_id: rotatingTeams[1].id,
+        team2_id: rotatingTeams[4].id,
+        status: "scheduled"
+      },
+      {
+        tournament_id: tournamentId,
+        round_number: round,
+        team1_id: rotatingTeams[2].id,
+        team2_id: rotatingTeams[3].id,
+        status: "scheduled"
+      }
+    );
+
+    rotatingTeams.splice(
+      1,
+      0,
+      rotatingTeams.pop()
+    );
+  }
+
+  const { error: insertError } =
+    await supabaseClient
+      .from("tournament_matches")
+      .insert(matches);
+
+  if (insertError) {
+    console.error(insertError);
+    alert("Errore nella creazione del calendario.");
+    return;
+  }
+
+  alert("Calendario generato: 5 giornate e 15 partite.");
+
+});
 
 async function openTournamentManager(tournamentId) {
 
@@ -2310,7 +2414,15 @@ if (teamsError) {
           <span>Partite</span>
           <strong>0</strong>
         </div>
-
+<div style="margin-top:20px;">
+ <button
+  class="primary"
+  id="generate-calendar"
+  data-tournament="${tournamentId}"
+>
+  Genera calendario
+</button>
+</div>
       </div>
 
       <div class="panel">
