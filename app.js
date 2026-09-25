@@ -1,225 +1,135 @@
-<!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+const SUPABASE_URL = "https://qrsvakoflmuertillpod.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xMBIXZPhX7mkSIMfQT3HBA_sPnhjFb9";
 
-  <title>Padel Manager</title>
+let supabaseClient = null;
 
-  <link rel="stylesheet" href="style.css">
-</head>
+const sections = [
+  "dashboard",
+  "players",
+  "courts",
+  "bookings",
+  "payments",
+  "tournaments"
+];
 
-<body>
+async function init() {
+  try {
+    const script = document.createElement("script");
 
-  <div class="app">
+    script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
 
-    <aside class="sidebar">
+    script.onload = async () => {
+      supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
 
-      <div class="brand">
-        🎾 Padel Manager
-      </div>
+      document.getElementById("status").textContent =
+        "Connessione a Supabase riuscita.";
 
-      <button class="nav active" data-section="dashboard">
-        Dashboard
-      </button>
+      await loadDashboard();
+    };
 
-      <button class="nav" data-section="players">
-        Giocatori
-      </button>
+    script.onerror = () => {
+      document.getElementById("status").textContent =
+        "Errore nel caricamento di Supabase.";
+    };
 
-      <button class="nav" data-section="courts">
-        Campi
-      </button>
+    document.head.appendChild(script);
 
-      <button class="nav" data-section="bookings">
-        Prenotazioni
-      </button>
+  } catch (error) {
+    console.error(error);
 
-      <button class="nav" data-section="payments">
-        Pagamenti
-      </button>
+    document.getElementById("status").textContent =
+      "Errore di connessione.";
+  }
+}
 
-      <button class="nav" data-section="tournaments">
-        Tornei
-      </button>
+function setupNavigation() {
+  const buttons = document.querySelectorAll(".nav");
 
-    </aside>
+  buttons.forEach(button => {
+    button.addEventListener("click", () => {
 
-    <main>
+      const sectionId = button.dataset.section;
 
-      <header>
-        <div>
-          <h1 id="page-title">Dashboard</h1>
-          <p>Gestionale del centro padel</p>
-        </div>
+      document.querySelectorAll(".nav").forEach(item => {
+        item.classList.remove("active");
+      });
 
-        <button class="primary" id="logout-btn">
-          Esci
-        </button>
-      </header>
+      button.classList.add("active");
 
-      <!-- DASHBOARD -->
+      document.querySelectorAll(".section").forEach(section => {
+        section.classList.remove("active");
+      });
 
-      <section id="dashboard" class="section active">
+      document.getElementById(sectionId).classList.add("active");
 
-        <div class="cards">
+      const title = button.textContent.trim();
 
-          <div class="card">
-            <span>Giocatori</span>
-            <strong id="players-count">0</strong>
-          </div>
+      document.getElementById("page-title").textContent = title;
+    });
+  });
+}
 
-          <div class="card">
-            <span>Campi</span>
-            <strong id="courts-count">0</strong>
-          </div>
+async function countRows(tableName) {
+  const { count, error } = await supabaseClient
+    .from(tableName)
+    .select("*", {
+      count: "exact",
+      head: true
+    });
 
-          <div class="card">
-            <span>Prenotazioni</span>
-            <strong id="bookings-count">0</strong>
-          </div>
+  if (error) {
+    console.error(`Errore ${tableName}:`, error);
+    return 0;
+  }
 
-          <div class="card">
-            <span>Tornei</span>
-            <strong id="tournaments-count">0</strong>
-          </div>
+  return count || 0;
+}
 
-        </div>
+async function loadDashboard() {
 
-        <div class="panel">
+  if (!supabaseClient) {
+    return;
+  }
 
-          <div class="panel-head">
-            <h2>Benvenuto</h2>
-          </div>
+  const players = await countRows("players");
+  const courts = await countRows("courts");
+  const bookings = await countRows("bookings");
+  const tournaments = await countRows("tournaments");
 
-          <p>
-            Il tuo Padel Manager è online.
-          </p>
+  document.getElementById("players-count").textContent = players;
+  document.getElementById("courts-count").textContent = courts;
+  document.getElementById("bookings-count").textContent = bookings;
+  document.getElementById("tournaments-count").textContent = tournaments;
+}
 
-          <p id="status">
-            Connessione a Supabase in preparazione...
-          </p>
+async function logout() {
 
-        </div>
+  if (!supabaseClient) {
+    return;
+  }
 
-      </section>
+  const { error } = await supabaseClient.auth.signOut();
 
-      <!-- GIOCATORI -->
+  if (error) {
+    alert("Errore durante l'uscita.");
+    console.error(error);
+    return;
+  }
 
-      <section id="players" class="section">
+  window.location.reload();
+}
 
-        <div class="panel">
+document.addEventListener("DOMContentLoaded", () => {
 
-          <div class="panel-head">
-            <h2>Giocatori</h2>
+  setupNavigation();
 
-            <button class="primary">
-              + Nuovo giocatore
-            </button>
-          </div>
+  document
+    .getElementById("logout-btn")
+    .addEventListener("click", logout);
 
-          <div id="players-content" class="empty">
-            Nessun giocatore presente.
-          </div>
+  init();
 
-        </div>
-
-      </section>
-
-      <!-- CAMPI -->
-
-      <section id="courts" class="section">
-
-        <div class="panel">
-
-          <div class="panel-head">
-            <h2>Campi</h2>
-
-            <button class="primary">
-              + Nuovo campo
-            </button>
-          </div>
-
-          <div id="courts-content" class="empty">
-            Nessun campo presente.
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- PRENOTAZIONI -->
-
-      <section id="bookings" class="section">
-
-        <div class="panel">
-
-          <div class="panel-head">
-            <h2>Prenotazioni</h2>
-
-            <button class="primary">
-              + Nuova prenotazione
-            </button>
-          </div>
-
-          <div id="bookings-content" class="empty">
-            Nessuna prenotazione presente.
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- PAGAMENTI -->
-
-      <section id="payments" class="section">
-
-        <div class="panel">
-
-          <div class="panel-head">
-            <h2>Pagamenti</h2>
-
-            <button class="primary">
-              + Nuovo pagamento
-            </button>
-          </div>
-
-          <div id="payments-content" class="empty">
-            Nessun pagamento presente.
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- TORNEI -->
-
-      <section id="tournaments" class="section">
-
-        <div class="panel">
-
-          <div class="panel-head">
-            <h2>Tornei</h2>
-
-            <button class="primary">
-              + Nuovo torneo
-            </button>
-
-          </div>
-
-          <div id="tournaments-content" class="empty">
-            Nessun torneo presente.
-          </div>
-
-        </div>
-
-      </section>
-
-    </main>
-
-  </div>
-
-  <script src="app.js"></script>
-
-</body>
-</html>
+});
