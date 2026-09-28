@@ -2311,6 +2311,10 @@ if (teamsError) {
           <span>Partite</span>
           <strong>0</strong>
         </div>
+       <div
+  id="tournament-standings"
+  style="margin-top:20px;"
+></div>
         <div
   id="tournament-calendar"
   style="margin-top:20px;"
@@ -2540,6 +2544,12 @@ if (teamsError) {
 
       calendarContainer.innerHTML =
         calendarHtml;
+      const standingsContainer =
+  document.getElementById("tournament-standings");
+
+if (standingsContainer) {
+  loadTournamentStandings(tournamentId);
+}
     }
   }
 document
@@ -3041,4 +3051,179 @@ async function deleteTeam(
     tournamentId
   );
 
+}
+async function loadTournamentStandings(tournamentId) {
+
+  const { data: teams, error: teamsError } =
+    await supabaseClient
+      .from("tournament_teams")
+      .select("*")
+      .eq("tournament_id", tournamentId)
+      .order("name");
+
+  if (teamsError) {
+    console.error(teamsError);
+    return;
+  }
+
+  const { data: matches, error: matchesError } =
+    await supabaseClient
+      .from("tournament_matches")
+      .select("*")
+      .eq("tournament_id", tournamentId)
+      .eq("status", "played");
+
+  if (matchesError) {
+    console.error(matchesError);
+    return;
+  }
+
+  const standings = teams.map(team => ({
+    id: team.id,
+    name: team.name,
+    played: 0,
+    wins: 0,
+    losses: 0,
+    points: 0,
+    gamesFor: 0,
+    gamesAgainst: 0,
+    gameDifference: 0
+  }));
+
+  matches.forEach(match => {
+
+    const team1 = standings.find(
+      team => team.id === match.team1_id
+    );
+
+    const team2 = standings.find(
+      team => team.id === match.team2_id
+    );
+
+    if (!team1 || !team2) {
+      return;
+    }
+
+    const score1 = Number(match.team1_score);
+    const score2 = Number(match.team2_score);
+
+    if (
+      Number.isNaN(score1) ||
+      Number.isNaN(score2)
+    ) {
+      return;
+    }
+
+    team1.played++;
+    team2.played++;
+
+    team1.gamesFor += score1;
+    team1.gamesAgainst += score2;
+
+    team2.gamesFor += score2;
+    team2.gamesAgainst += score1;
+
+    if (score1 > score2) {
+      team1.wins++;
+      team2.losses++;
+      team1.points += 3;
+    }
+
+    if (score2 > score1) {
+      team2.wins++;
+      team1.losses++;
+      team2.points += 3;
+    }
+  });
+
+  standings.forEach(team => {
+    team.gameDifference =
+      team.gamesFor - team.gamesAgainst;
+  });
+
+  standings.sort((a, b) => {
+
+    if (b.points !== a.points) {
+      return b.points - a.points;
+    }
+
+    if (b.gameDifference !== a.gameDifference) {
+      return b.gameDifference - a.gameDifference;
+    }
+
+    return b.gamesFor - a.gamesFor;
+  });
+
+  const container =
+    document.getElementById("tournament-standings");
+
+  if (!container) {
+    return;
+  }
+
+  let html = `
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Classifica</h2>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:10px;">Pos.</th>
+              <th style="text-align:left;padding:10px;">Formazione</th>
+              <th style="padding:10px;">PG</th>
+              <th style="padding:10px;">V</th>
+              <th style="padding:10px;">S</th>
+              <th style="padding:10px;">GF</th>
+              <th style="padding:10px;">GS</th>
+              <th style="padding:10px;">Diff.</th>
+              <th style="padding:10px;">Punti</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+
+  standings.forEach((team, index) => {
+
+    html += `
+      <tr style="border-top:1px solid #e2e8ea;">
+        <td style="padding:10px;">${index + 1}</td>
+        <td style="padding:10px;">
+          <strong>${escapeHtml(team.name)}</strong>
+        </td>
+        <td style="text-align:center;padding:10px;">
+          ${team.played}
+        </td>
+        <td style="text-align:center;padding:10px;">
+          ${team.wins}
+        </td>
+        <td style="text-align:center;padding:10px;">
+          ${team.losses}
+        </td>
+        <td style="text-align:center;padding:10px;">
+          ${team.gamesFor}
+        </td>
+        <td style="text-align:center;padding:10px;">
+          ${team.gamesAgainst}
+        </td>
+        <td style="text-align:center;padding:10px;">
+          ${team.gameDifference}
+        </td>
+        <td style="text-align:center;padding:10px;">
+          <strong>${team.points}</strong>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
 }
