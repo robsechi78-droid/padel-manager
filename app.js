@@ -2498,7 +2498,7 @@ if (teamsError) {
         type="number"
         min="0"
         max="7"
-        placeholder="0"
+        value="${match.team1_score ?? ""}"
         style="width:70px;padding:8px;"
       >
 
@@ -2508,7 +2508,7 @@ if (teamsError) {
         type="number"
         min="0"
         max="7"
-        placeholder="0"
+        value="${match.team2_score ?? ""}"
         style="width:70px;padding:8px;"
       >
 
