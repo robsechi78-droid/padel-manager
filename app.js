@@ -3188,7 +3188,10 @@ async function loadTournamentStandings(tournamentId) {
   standings.forEach((team, index) => {
 
     html += `
-      <tr style="border-top:1px solid #e2e8ea;">
+     <tr style="
+  border-top:1px solid #e2e8ea;
+  background:${index < 4 ? "#eaf7f0" : "#fff3e6"};
+">
         <td style="padding:10px;">${index + 1}</td>
         <td style="padding:10px;">
           <strong>${escapeHtml(team.name)}</strong>
