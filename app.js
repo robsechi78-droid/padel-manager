@@ -2471,20 +2471,58 @@ if (teamsError) {
               team => team.id === match.team2_id
             );
 
-          calendarHtml += `
-            <div
-              style="
-                padding:12px;
-                border-bottom:1px solid #e2e8ea;
-              "
-            >
-              <strong>
-                ${escapeHtml(team1 ? team1.name : "Formazione")}
-                -
-                ${escapeHtml(team2 ? team2.name : "Formazione")}
-              </strong>
-            </div>
-          `;
+   calendarHtml += `
+  <div
+    style="
+      padding:14px;
+      border-bottom:1px solid #e2e8ea;
+    "
+  >
+
+    <div style="margin-bottom:10px;">
+      <strong>
+        ${escapeHtml(team1 ? team1.name : "Formazione")}
+        -
+        ${escapeHtml(team2 ? team2.name : "Formazione")}
+      </strong>
+    </div>
+
+    <div style="
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    ">
+
+      <input
+        type="number"
+        min="0"
+        max="7"
+        placeholder="0"
+        style="width:70px;padding:8px;"
+      >
+
+      <span>-</span>
+
+      <input
+        type="number"
+        min="0"
+        max="7"
+        placeholder="0"
+        style="width:70px;padding:8px;"
+      >
+
+      <button
+        class="primary"
+        type="button"
+      >
+        Salva risultato
+      </button>
+
+    </div>
+
+  </div>
+`;
 
         });
 
