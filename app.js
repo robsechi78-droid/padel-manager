@@ -2315,6 +2315,10 @@ if (teamsError) {
   id="tournament-standings"
   style="margin-top:20px;"
 ></div>
+<div
+  id="tournament-bracket"
+  style="margin-top:20px;"
+></div>
         <div
   id="tournament-calendar"
   style="margin-top:20px;"
@@ -2550,6 +2554,7 @@ if (teamsError) {
 if (standingsContainer) {
   loadTournamentStandings(tournamentId);
 }
+      loadTournamentBracket(tournamentId);
     }
   }
 document
@@ -3229,4 +3234,149 @@ async function loadTournamentStandings(tournamentId) {
   `;
 
   container.innerHTML = html;
+}
+async function loadTournamentBracket(tournamentId) {
+
+  const { data: teams, error: teamsError } =
+    await supabaseClient
+      .from("tournament_teams")
+      .select("*")
+      .eq("tournament_id", tournamentId);
+
+  if (teamsError) {
+    console.error(teamsError);
+    return;
+  }
+
+  const { data: matches, error: matchesError } =
+    await supabaseClient
+      .from("tournament_matches")
+      .select("*")
+      .eq("tournament_id", tournamentId)
+      .eq("status", "played");
+
+  if (matchesError) {
+    console.error(matchesError);
+    return;
+  }
+
+  const standings = teams.map(team => ({
+    id: team.id,
+    name: team.name,
+    points: 0,
+    gamesFor: 0,
+    gamesAgainst: 0
+  }));
+
+  matches.forEach(match => {
+
+    const team1 =
+      standings.find(team => team.id === match.team1_id);
+
+    const team2 =
+      standings.find(team => team.id === match.team2_id);
+
+    if (!team1 || !team2) {
+      return;
+    }
+
+    const score1 = Number(match.team1_score);
+    const score2 = Number(match.team2_score);
+
+    if (
+      Number.isNaN(score1) ||
+      Number.isNaN(score2)
+    ) {
+      return;
+    }
+
+    team1.gamesFor += score1;
+    team1.gamesAgainst += score2;
+
+    team2.gamesFor += score2;
+    team2.gamesAgainst += score1;
+
+    if (score1 > score2) {
+      team1.points += 3;
+    }
+
+    if (score2 > score1) {
+      team2.points += 3;
+    }
+  });
+
+  standings.forEach(team => {
+    team.gameDifference =
+      team.gamesFor - team.gamesAgainst;
+  });
+
+  standings.sort((a, b) => {
+
+    if (b.points !== a.points) {
+      return b.points - a.points;
+    }
+
+    if (b.gameDifference !== a.gameDifference) {
+      return b.gameDifference - a.gameDifference;
+    }
+
+    return b.gamesFor - a.gamesFor;
+  });
+
+  if (standings.length < 4) {
+    return;
+  }
+
+  const first = standings[0];
+  const second = standings[1];
+  const third = standings[2];
+  const fourth = standings[3];
+
+  const container =
+    document.getElementById("tournament-bracket");
+
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="panel">
+
+      <div class="panel-head">
+        <h2>Tabellone finale</h2>
+      </div>
+
+      <h3>Semifinali</h3>
+
+      <div style="margin-top:15px;">
+        <div style="
+          padding:15px;
+          border:1px solid #e2e8ea;
+          border-radius:10px;
+          margin-bottom:10px;
+        ">
+          <strong>Semifinale 1</strong>
+          <div style="margin-top:8px;">
+            ${escapeHtml(first.name)}
+            <strong> vs </strong>
+            ${escapeHtml(fourth.name)}
+          </div>
+        </div>
+
+        <div style="
+          padding:15px;
+          border:1px solid #e2e8ea;
+          border-radius:10px;
+        ">
+          <strong>Semifinale 2</strong>
+          <div style="margin-top:8px;">
+            ${escapeHtml(second.name)}
+            <strong> vs </strong>
+            ${escapeHtml(third.name)}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `;
 }
