@@ -2524,23 +2524,107 @@ if (teamsError) {
       flex-wrap:wrap;
     ">
 
-      <input
-        type="number"
-        min="0"
-        max="7"
-        value="${match.team1_score ?? ""}"
-        style="width:70px;padding:8px;"
-      >
+<div style="
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  width:100%;
+">
 
-      <span>-</span>
+  <div style="
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  ">
 
-      <input
-        type="number"
-        min="0"
-        max="7"
-        value="${match.team2_score ?? ""}"
-        style="width:70px;padding:8px;"
-      >
+    <strong style="width:70px;">
+      1° Set
+    </strong>
+
+    <input
+      type="number"
+      min="0"
+      max="7"
+      value="${match.set1_team1 ?? ""}"
+      style="width:70px;padding:8px;"
+    >
+
+    <span>-</span>
+
+    <input
+      type="number"
+      min="0"
+      max="7"
+      value="${match.set1_team2 ?? ""}"
+      style="width:70px;padding:8px;"
+    >
+
+  </div>
+
+  <div style="
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  ">
+
+    <strong style="width:70px;">
+      2° Set
+    </strong>
+
+    <input
+      type="number"
+      min="0"
+      max="7"
+      value="${match.set2_team1 ?? ""}"
+      style="width:70px;padding:8px;"
+    >
+
+    <span>-</span>
+
+    <input
+      type="number"
+      min="0"
+      max="7"
+      value="${match.set2_team2 ?? ""}"
+      style="width:70px;padding:8px;"
+    >
+
+  </div>
+
+  <div style="
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  ">
+
+    <strong style="width:70px;">
+      3° Set
+    </strong>
+
+    <input
+      type="number"
+      min="0"
+      max="7"
+      value="${match.set3_team1 ?? ""}"
+      style="width:70px;padding:8px;"
+    >
+
+    <span>-</span>
+
+    <input
+      type="number"
+      min="0"
+      max="7"
+      value="${match.set3_team2 ?? ""}"
+      style="width:70px;padding:8px;"
+    >
+
+  </div>
+
+</div>
 
     <button
   class="primary save-result"
@@ -2703,17 +2787,89 @@ async function saveMatchResult(
   const inputs =
     matchRow.querySelectorAll("input");
 
-  const team1Score =
-    parseInt(inputs[0].value, 10);
+  if (inputs.length < 6) {
+    alert("Inserisci i risultati dei set.");
+    return;
+  }
 
-  const team2Score =
-    parseInt(inputs[1].value, 10);
+  const set1Team1 = inputs[0].value;
+  const set1Team2 = inputs[1].value;
+
+  const set2Team1 = inputs[2].value;
+  const set2Team2 = inputs[3].value;
+
+  const set3Team1 = inputs[4].value;
+  const set3Team2 = inputs[5].value;
 
   if (
-    Number.isNaN(team1Score) ||
-    Number.isNaN(team2Score)
+    set1Team1 === "" ||
+    set1Team2 === "" ||
+    set2Team1 === "" ||
+    set2Team2 === ""
   ) {
-    alert("Inserisci entrambi i risultati.");
+    alert("Inserisci il risultato dei primi 2 set.");
+    return;
+  }
+
+  const s1t1 = Number(set1Team1);
+  const s1t2 = Number(set1Team2);
+  const s2t1 = Number(set2Team1);
+  const s2t2 = Number(set2Team2);
+
+  let s3t1 = null;
+  let s3t2 = null;
+
+  if (set3Team1 !== "" || set3Team2 !== "") {
+
+    if (set3Team1 === "" || set3Team2 === "") {
+      alert("Inserisci entrambi i punteggi del 3° set.");
+      return;
+    }
+
+    s3t1 = Number(set3Team1);
+    s3t2 = Number(set3Team2);
+  }
+
+  let team1Sets = 0;
+  let team2Sets = 0;
+
+  if (s1t1 > s1t2) {
+    team1Sets++;
+  } else if (s1t2 > s1t1) {
+    team2Sets++;
+  } else {
+    alert("Un set non può terminare in parità.");
+    return;
+  }
+
+  if (s2t1 > s2t2) {
+    team1Sets++;
+  } else if (s2t2 > s2t1) {
+    team2Sets++;
+  } else {
+    alert("Un set non può terminare in parità.");
+    return;
+  }
+
+  if (team1Sets === 1 && team2Sets === 1) {
+
+    if (s3t1 === null || s3t2 === null) {
+      alert("Dopo un set vinto per parte è necessario inserire il 3° set.");
+      return;
+    }
+
+    if (s3t1 > s3t2) {
+      team1Sets++;
+    } else if (s3t2 > s3t1) {
+      team2Sets++;
+    } else {
+      alert("Il 3° set non può terminare in parità.");
+      return;
+    }
+
+  } else if (s3t1 !== null || s3t2 !== null) {
+
+    alert("Il 3° set va inserito solo se le prime due frazioni sono 1-1.");
     return;
   }
 
@@ -2721,8 +2877,14 @@ async function saveMatchResult(
     await supabaseClient
       .from("tournament_matches")
       .update({
-        team1_score: team1Score,
-        team2_score: team2Score,
+        set1_team1: s1t1,
+        set1_team2: s1t2,
+        set2_team1: s2t1,
+        set2_team2: s2t2,
+        set3_team1: s3t1,
+        set3_team2: s3t2,
+        team1_score: team1Sets,
+        team2_score: team2Sets,
         status: "played"
       })
       .eq("id", matchId);
@@ -3131,37 +3293,80 @@ async function loadTournamentStandings(tournamentId) {
       return;
     }
 
-    const score1 = Number(match.team1_score);
-    const score2 = Number(match.team2_score);
+    const setScores = [
+  [
+    match.set1_team1,
+    match.set1_team2
+  ],
+  [
+    match.set2_team1,
+    match.set2_team2
+  ],
+  [
+    match.set3_team1,
+    match.set3_team2
+  ]
+];
 
-    if (
-      Number.isNaN(score1) ||
-      Number.isNaN(score2)
-    ) {
-      return;
-    }
+let team1Sets = 0;
+let team2Sets = 0;
+let validSets = 0;
 
-    team1.played++;
-    team2.played++;
+setScores.forEach(set => {
 
-    team1.gamesFor += score1;
-    team1.gamesAgainst += score2;
+  const s1 =
+    set[0] !== null && set[0] !== undefined
+      ? Number(set[0])
+      : null;
 
-    team2.gamesFor += score2;
-    team2.gamesAgainst += score1;
+  const s2 =
+    set[1] !== null && set[1] !== undefined
+      ? Number(set[1])
+      : null;
 
-    if (score1 > score2) {
-      team1.wins++;
-      team2.losses++;
-      team1.points += 3;
-    }
+  if (
+    s1 === null ||
+    s2 === null ||
+    Number.isNaN(s1) ||
+    Number.isNaN(s2)
+  ) {
+    return;
+  }
 
-    if (score2 > score1) {
-      team2.wins++;
-      team1.losses++;
-      team2.points += 3;
-    }
-  });
+  validSets++;
+
+  team1.gamesFor += s1;
+  team1.gamesAgainst += s2;
+
+  team2.gamesFor += s2;
+  team2.gamesAgainst += s1;
+
+  if (s1 > s2) {
+    team1Sets++;
+  } else if (s2 > s1) {
+    team2Sets++;
+  }
+});
+
+if (validSets < 2) {
+  return;
+}
+
+team1.played++;
+team2.played++;
+
+if (team1Sets > team2Sets) {
+
+  team1.wins++;
+  team2.losses++;
+  team1.points += 3;
+
+} else if (team2Sets > team1Sets) {
+
+  team2.wins++;
+  team1.losses++;
+  team2.points += 3;
+}
 
   standings.forEach(team => {
     team.gameDifference =
@@ -3302,29 +3507,63 @@ async function loadTournamentBracket(tournamentId) {
       return;
     }
 
-    const score1 = Number(match.team1_score);
-    const score2 = Number(match.team2_score);
+  const setScores = [
+  [
+    match.set1_team1,
+    match.set1_team2
+  ],
+  [
+    match.set2_team1,
+    match.set2_team2
+  ],
+  [
+    match.set3_team1,
+    match.set3_team2
+  ]
+];
 
-    if (
-      Number.isNaN(score1) ||
-      Number.isNaN(score2)
-    ) {
-      return;
-    }
+let team1Sets = 0;
+let team2Sets = 0;
 
-    team1.gamesFor += score1;
-    team1.gamesAgainst += score2;
+setScores.forEach(set => {
 
-    team2.gamesFor += score2;
-    team2.gamesAgainst += score1;
+  const s1 =
+    set[0] !== null && set[0] !== undefined
+      ? Number(set[0])
+      : null;
 
-    if (score1 > score2) {
-      team1.points += 3;
-    }
+  const s2 =
+    set[1] !== null && set[1] !== undefined
+      ? Number(set[1])
+      : null;
 
-    if (score2 > score1) {
-      team2.points += 3;
-    }
+  if (
+    s1 === null ||
+    s2 === null ||
+    Number.isNaN(s1) ||
+    Number.isNaN(s2)
+  ) {
+    return;
+  }
+
+  if (s1 > s2) {
+    team1Sets++;
+  } else if (s2 > s1) {
+    team2Sets++;
+  }
+});
+
+if (team1Sets < 2 && team2Sets < 2) {
+  return;
+}
+
+if (team1Sets > team2Sets) {
+  team1.points += 3;
+}
+
+if (team2Sets > team1Sets) {
+  team2.points += 3;
+}
   });
 
   standings.forEach(team => {
