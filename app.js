@@ -2175,7 +2175,15 @@ async function loadTournaments() {
         <td style="padding:12px;border-top:1px solid #e2e8ea;">
           ${escapeHtml(tournament.end_date || "-")}
         </td>
-
+<td style="padding:12px;border-top:1px solid #e2e8ea;">
+  <button
+    class="primary delete-tournament"
+    type="button"
+    data-id="${tournament.id}"
+  >
+    Elimina
+  </button>
+</td>
         <td style="padding:12px;border-top:1px solid #e2e8ea;">
           ${
   tournament.status === "planned"
@@ -2229,7 +2237,21 @@ async function loadTournaments() {
 
 });
 
+document.addEventListener("click", function(event) {
 
+  const button =
+    event.target.closest(".delete-tournament");
+
+  if (!button) {
+    return;
+  }
+
+  const tournamentId =
+    button.getAttribute("data-id");
+
+  deleteTournament(tournamentId);
+
+});
 
 async function openTournamentManager(tournamentId) {
 
@@ -3379,4 +3401,55 @@ async function loadTournamentBracket(tournamentId) {
 
     </div>
   `;
+}
+async function deleteTournament(tournamentId) {
+
+  const confirmed =
+    confirm(
+      "Sei sicuro di voler eliminare questo torneo?\n\nVerranno eliminate anche tutte le formazioni e le partite associate.\n\nQuesta operazione non può essere annullata."
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  const { error: matchesError } =
+    await supabaseClient
+      .from("tournament_matches")
+      .delete()
+      .eq("tournament_id", tournamentId);
+
+  if (matchesError) {
+    console.error(matchesError);
+    alert("Errore nell'eliminazione delle partite.");
+    return;
+  }
+
+  const { error: teamsError } =
+    await supabaseClient
+      .from("tournament_teams")
+      .delete()
+      .eq("tournament_id", tournamentId);
+
+  if (teamsError) {
+    console.error(teamsError);
+    alert("Errore nell'eliminazione delle formazioni.");
+    return;
+  }
+
+  const { error: tournamentError } =
+    await supabaseClient
+      .from("tournaments")
+      .delete()
+      .eq("id", tournamentId);
+
+  if (tournamentError) {
+    console.error(tournamentError);
+    alert("Errore nell'eliminazione del torneo.");
+    return;
+  }
+
+  alert("Torneo eliminato correttamente.");
+
+  loadTournaments();
 }
