@@ -2516,6 +2516,8 @@ if (teamsError) {
   class="primary save-result"
   type="button"
   data-match-id="${match.id}"
+  data-tournament-id="${tournamentId}"
+  onclick="saveMatchResult('${match.id}', '${tournamentId}', this)"
 >
   Salva risultato
 </button>
@@ -2647,7 +2649,62 @@ function openTeamForm(tournamentId) {
 
 }
 
+async function saveMatchResult(
+  matchId,
+  tournamentId,
+  button
+) {
 
+  const matchRow =
+    button.closest("div[style*='border-bottom']");
+
+  if (!matchRow) {
+    alert("Impossibile individuare la partita.");
+    return;
+  }
+
+  const inputs =
+    matchRow.querySelectorAll("input");
+
+  const team1Score =
+    parseInt(inputs[0].value, 10);
+
+  const team2Score =
+    parseInt(inputs[1].value, 10);
+
+  if (
+    Number.isNaN(team1Score) ||
+    Number.isNaN(team2Score)
+  ) {
+    alert("Inserisci entrambi i risultati.");
+    return;
+  }
+
+  const { error } =
+    await supabaseClient
+      .from("tournament_matches")
+      .update({
+        team1_score: team1Score,
+        team2_score: team2Score,
+        status: "played"
+      })
+      .eq("id", matchId);
+
+  if (error) {
+
+    console.error(error);
+
+    alert(
+      "Errore nel salvataggio del risultato."
+    );
+
+    return;
+  }
+
+  alert("Risultato salvato.");
+
+  openTournamentManager(tournamentId);
+}
 async function saveTeam(tournamentId) {
 
   const name =
