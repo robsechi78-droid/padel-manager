@@ -2512,12 +2512,13 @@ if (teamsError) {
         style="width:70px;padding:8px;"
       >
 
-      <button
-        class="primary"
-        type="button"
-      >
-        Salva risultato
-      </button>
+    <button
+  class="primary save-result"
+  type="button"
+  data-match-id="${match.id}"
+>
+  Salva risultato
+</button>
 
     </div>
 
