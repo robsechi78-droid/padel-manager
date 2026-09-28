@@ -2213,7 +2213,7 @@ async function loadTournaments() {
   container.innerHTML = html;
 }
 
-   document.addEventListener("click", function(event) {
+   document.addEventListener("click", async function(event) {
 
   const button =
     event.target.closest(".tournament-manage");
@@ -2512,13 +2512,13 @@ if (teamsError) {
         style="width:70px;padding:8px;"
       >
 
-      <button
-        class="primary"
-        type="button"
-      >
-        Salva risultato
-      </button>
-
+    <button
+  class="primary save-result"
+  type="button"
+  data-match-id="${match.id}"
+>
+  Salva risultato
+</button>
     </div>
 
   </div>
@@ -2752,7 +2752,68 @@ document.addEventListener("click", function(event) {
     );
 
   }
+  const saveResultButton =
+    event.target.closest(".save-result");
 
+  if (saveResultButton) {
+
+    const matchId =
+      saveResultButton.getAttribute("data-match-id");
+
+    const matchRow =
+      saveResultButton.closest("div[style*='border-bottom']");
+
+    const scoreInputs =
+      matchRow.querySelectorAll("input");
+
+    const team1Score =
+      parseInt(scoreInputs[0].value, 10);
+
+    const team2Score =
+      parseInt(scoreInputs[1].value, 10);
+
+    if (
+      Number.isNaN(team1Score) ||
+      Number.isNaN(team2Score)
+    ) {
+      alert("Inserisci entrambi i risultati.");
+      return;
+    }
+
+    const { error: resultError } =
+      await supabaseClient
+        .from("tournament_matches")
+        .update({
+          team1_score: team1Score,
+          team2_score: team2Score,
+          status: "played"
+        })
+        .eq("id", matchId);
+
+    if (resultError) {
+
+      console.error(resultError);
+
+      alert(
+        "Errore nel salvataggio del risultato."
+      );
+
+      return;
+    }
+
+    alert("Risultato salvato.");
+
+    const tournamentId =
+      document
+        .getElementById("generate-calendar")
+        ?.getAttribute("data-tournament");
+
+    if (tournamentId) {
+      openTournamentManager(tournamentId);
+    }
+
+  }
+  
 });
 
 
