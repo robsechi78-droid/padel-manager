@@ -3461,7 +3461,7 @@ if (team1Sets > team2Sets) {
   `;
 
   container.innerHTML = html;
-}
+
 async function loadTournamentBracket(tournamentId) {
 
   const { data: teams, error: teamsError } =
