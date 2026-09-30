@@ -3693,4 +3693,6 @@ async function deleteTournament(tournamentId) {
   loadTournaments();
 }
 
-
+}
+}
+                  }
