@@ -216,19 +216,12 @@ h2 {
   .brand-title {
     font-size: 18px;
   }
-
-}
+ }
 /* =========================
    VERSIONE SMARTPHONE
    ========================= */
 
 @media (max-width: 700px) {
-
-  .app {
-    display: block;
-    width: 100%;
-    overflow-x: hidden;
-  }
 
   .sidebar {
     width: 100%;
@@ -260,9 +253,7 @@ h2 {
 
   main {
     width: 100%;
-    max-width: 100%;
     padding: 0;
-    overflow-x: hidden;
   }
 
   header {
@@ -286,24 +277,9 @@ h2 {
     font-size: 13px;
   }
 
-  main > * {
-    max-width: 100%;
-  }
-
   .panel {
     width: calc(100% - 20px);
     margin: 10px;
-    box-sizing: border-box;
-  }
-
-  button {
-    max-width: 100%;
-  }
-
-  input,
-  select,
-  textarea {
-    max-width: 100%;
     box-sizing: border-box;
   }
 
