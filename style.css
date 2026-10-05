@@ -285,3 +285,39 @@ h2 {
 
 }
 
+/* Correzione larghezza smartphone */
+
+@media (max-width: 700px) {
+
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .panel {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  table {
+    max-width: 100%;
+  }
+
+}
